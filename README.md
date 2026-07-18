@@ -4,7 +4,7 @@ SlideLineage is a local scientific developer tool planned to audit train/test pa
 
 ## Current implementation status
 
-The repository foundation, typed contract layer, and deterministic CSV ingestion boundary exist: packaging, documentation, developer tooling, CI, CLI help/version output, `AuditConfig`, the default `SplitPolicy`, typed domain/report contracts, conservative normalization helpers, source-byte SHA-256 manifest provenance, typed loaded-manifest contracts, deterministic semantic schema mapping, explicit schema overrides, canonical record construction, stable record IDs, strict TCGA parsing, and lineage conflict reporting are implemented. Schema mapping supports explicit YAML/JSON maps, direct column overrides, deterministic header/value scoring, unresolved ambiguity, ranked alternatives, and train/test consistency messages. Canonical record construction preserves source provenance, deterministic digests, direct and TCGA-derived lineage evidence, and partition warnings while avoiding overlap detection. The audit pipeline arrives in later stages. Identifier overlap facts, image path auditing, byte fingerprints, canonical pixel fingerprints, perceptual similarity candidates, and evidence-rich factual findings are now implemented. Relationship graph materialization, policy evaluation, evaluated findings, deterministic repair proposals, report writers, deterministic audit orchestration, standalone HTML/JSON/CSV artifact generation, repair CSV output, and the operational audit CLI are now implemented. Demo generation and OpenAI API integration remain pending.
+The repository foundation, typed contract layer, and deterministic CSV ingestion boundary exist: packaging, documentation, developer tooling, CI, CLI help/version output, `AuditConfig`, the default `SplitPolicy`, typed domain/report contracts, conservative normalization helpers, source-byte SHA-256 manifest provenance, typed loaded-manifest contracts, deterministic semantic schema mapping, explicit schema overrides, canonical record construction, stable record IDs, strict TCGA parsing, and lineage conflict reporting are implemented. Schema mapping supports explicit YAML/JSON maps, direct column overrides, deterministic header/value scoring, unresolved ambiguity, ranked alternatives, and train/test consistency messages. Canonical record construction preserves source provenance, deterministic digests, direct and TCGA-derived lineage evidence, and partition warnings while avoiding overlap detection. The audit pipeline arrives in later stages. Identifier overlap facts, image path auditing, byte fingerprints, canonical pixel fingerprints, perceptual similarity candidates, and evidence-rich factual findings are now implemented. Relationship graph materialization, policy evaluation, evaluated findings, deterministic repair proposals, report writers, deterministic audit orchestration, standalone HTML/JSON/CSV artifact generation, repair CSV output, and the operational audit CLI are now implemented. The reproducible synthetic demonstration is implemented. Optional OpenAI API integration remains pending.
 
 ## Deterministic-first architecture
 
@@ -15,19 +15,28 @@ The planned architecture separates:
 3. Optional repair proposals requiring researcher review.
 4. Optional GPT-5.6 schema interpretation, with deterministic scientific evidence remaining authoritative.
 
-## Planned command example
+## Operational synthetic demo
 
-A later milestone is expected to introduce an audit command similar to:
+All demo identifiers and pixels are synthetic. After development installation,
+generate and audit from the repository root:
 
 ```bash
+python scripts/generate_demo.py --force
 slidelineage audit \
-  --train examples/demo/train_manifest.csv \
-  --test examples/demo/test_manifest.csv \
-  --images examples/demo/images \
-  --output artifacts/demo-audit
+  --train examples/demo/generated/train_manifest.csv \
+  --test examples/demo/generated/test_manifest.csv \
+  --images examples/demo/generated/images \
+  --schema-map examples/demo/schema-map.yaml \
+  --output artifacts/demo-audit \
+  --repair --force
 ```
 
-This two-manifest command is now operational; the example fixture files arrive in the next demo-fixture task if absent.
+Open `artifacts/demo-audit/report.html` locally. Exit code `2` is expected: the
+audit completed and wrote artifacts, but deliberate relationships violate the
+default policy. No clinical interpretation is performed. Similarity is a review
+candidate rather than identity evidence, and repair requires researcher review.
+See [`examples/demo/README.md`](examples/demo/README.md) for details and PowerShell
+syntax.
 
 ## Development installation
 
@@ -74,7 +83,7 @@ Later reporting stages plan to produce:
 - `findings.csv`
 - `repair_proposal.csv`, only when repair proposal generation is requested
 
-Task 8 implements operational report writers; richer demo fixtures remain pending.
+Task 9 supplies the reproducible synthetic fixture and end-to-end assertions.
 
 ## Privacy and scope
 
@@ -88,7 +97,7 @@ SlideLineage is distributed under the MIT License. See [LICENSE](LICENSE).
 
 Relationship graph contracts and deterministic materialization now exist for canonical records and factual findings. Explicit `SplitPolicy` evaluation converts factual findings into evaluated findings with policy outcomes, rules, reasons, counts, exit-code semantics, and repair eligibility. Deterministic repair proposals now construct indivisible components, run a typed greedy train/test assignment, preserve all records, and report proposal metrics and tradeoffs for researcher review.
 
-Still pending for later tasks: report writers, the operational audit CLI, synthetic demonstration fixtures, GPT integration, and repository automation.
+Still pending for later tasks: optional GPT integration and Task 10 packaging/automation.
 
 ## Operational audit quick start
 
@@ -102,7 +111,7 @@ slidelineage audit \
   --output artifacts/demo-audit
 ```
 
-The demo files in that example are scheduled for the next demo-fixture task if they are absent in the current checkout. For current use, provide your own train/test CSV manifests and optional image root.
+The Task 9 generator creates the documented demo files on demand; users may also provide their own train/test CSV manifests and optional image root.
 
 The audit writes:
 

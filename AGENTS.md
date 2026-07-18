@@ -92,3 +92,10 @@ Future stages must preserve the separation between factual detector output and p
 ## Task 8 audit CLI and reporting constraints
 
 Future reporting work must write policy-violation reports before returning exit code 2, avoid raw-row leakage, preserve HTML autoescaping, preserve output-directory safety, retain deterministic artifact ordering, and keep any future AI-generated content separate from deterministic findings and policy outcomes.
+
+## Task 9 demonstration constraints
+
+Future demo changes must remain entirely synthetic, avoid medical claims, preserve
+the expected identifier, byte, pixel, similarity, institution, and input-quality
+relationship categories, preserve deterministic generation, keep committed data
+small, and update end-to-end tests whenever fixture semantics change.

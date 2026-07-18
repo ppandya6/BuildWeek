@@ -1,0 +1,7 @@
+source_record_id: record_uuid
+image_path: image_name
+patient_id: subject
+specimen_id: specimen
+slide_id: slide
+institution_id: source_center
+class_label: synthetic_group

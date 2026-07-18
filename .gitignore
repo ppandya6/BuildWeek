@@ -26,3 +26,5 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+examples/demo/generated/

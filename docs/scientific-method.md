@@ -40,6 +40,29 @@ Repair outputs are proposals requiring researcher review. They should explain wh
 
 SlideLineage is limited to dataset provenance and partition validity. It must not make diagnosis, prognosis, treatment advice, biological interpretation, or clinical claims.
 
+## Synthetic demonstration fixture
+
+Task 9 provides an illustrative, non-clinical fixture made only from fictional
+identifiers and deterministic 64-by-64 RGB constructions. Independent cross-split
+pairs plant one accepted patient identifier, one specimen identifier, one slide
+identifier, one shared institution, one byte-identical image, one decoded-pixel-
+identical PNG/BMP pair, and one perceptually similar but nonidentical pair. A
+referenced image is deliberately absent. All other accepted identifiers are unique
+controls, so image similarity is never used to infer lineage identity.
+
+Under the default policy the patient, specimen, slide, byte, and pixel findings are
+violations; institution reuse is allowed, while similarity and missing-image facts
+remain review items. Exit code 2 is therefore an expected completed-audit result.
+Repair uses only eligible deterministic relationships and remains a proposal
+requiring researcher review.
+
+The fixture demonstrates code paths, not prevalence, benchmark performance,
+publication readiness, or split correctness. Its geometric images do not represent
+biological material. Reproducibility covers generated filenames and bytes,
+manifest ordering, canonical record IDs, finding IDs, and scientific report
+content. Run UUIDs and execution timestamps intentionally vary; dependency and
+platform versions are disclosed reproducibility boundaries.
+
 
 ## Manifest ingestion provenance
 
@@ -57,7 +80,7 @@ Task 4 implements semantic schema mapping as a deterministic interpretation laye
 
 Schema mapping records per-field source, confidence, ranked alternatives, and validation messages. Header evidence remains primary, value evidence is limited to transparent signals such as image-like paths, split-like categories, cardinality, uniqueness, and repeated institution-like values, and contradictory strong headers remain dominant. Mapping results are not factual overlap findings and do not evaluate `SplitPolicy`.
 
-Report writing, operational audit CLI behavior, and GPT integration remain pending.
+Report writing and operational audit CLI behavior are implemented. Optional GPT integration remains pending.
 
 ## Canonical records and TCGA lineage
 
