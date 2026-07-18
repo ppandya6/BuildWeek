@@ -84,3 +84,7 @@ Future detectors must use only accepted, nonconflicted canonical identifiers for
 ## Task 6 detector constraints
 
 Future stages must keep policy evaluation separate from factual detectors, avoid promoting image similarity to lineage identity, retain detector versions and configured thresholds in image evidence/metrics, preserve failed image evidence, and avoid partial pair comparisons unless explicitly disclosed.
+
+## Task 7 graph, policy, and repair constraints
+
+Future stages must preserve the separation between factual detector output and policy-evaluated findings, including policy profile names, policy rules, and deterministic policy reasons. Similarity candidates must remain outside deterministic repair. Every repair output must be labeled as a proposed partition requiring researcher review, preserve every input record exactly once, and expose tradeoffs rather than hiding ratio, label, institution-grouping, image-similarity, or input-quality limitations.

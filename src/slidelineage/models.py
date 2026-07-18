@@ -603,12 +603,15 @@ class EvaluatedFinding(FindingBase):
     """Policy-evaluated finding with an explicit policy outcome and reason."""
 
     policy_outcome: PolicyOutcome
+    policy_rule: str = "unspecified_policy_rule"
     policy_reason: str
+    policy_profile: str = DEFAULT_POLICY_PROFILE
+    repair_eligible: bool = False
 
-    @field_validator("policy_reason")
+    @field_validator("policy_reason", "policy_rule", "policy_profile")
     @classmethod
-    def _policy_reason_nonblank(cls, value: str) -> str:
-        return _nonblank(value, "policy_reason")
+    def _policy_text_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "policy evaluation text")
 
 
 class GraphNode(ContractModel):
@@ -669,6 +672,7 @@ class RepairComponent(ContractModel):
     original_partition_counts: PartitionCount = Field(default_factory=dict)
     label_counts: LabelCount = Field(default_factory=dict)
     proposed_partition: Partition | None = None
+    conflict_status: str | None = None
 
     @field_validator("component_id")
     @classmethod
@@ -722,6 +726,7 @@ class RepairProposal(ContractModel):
     decisions: tuple[RepairDecision, ...] = ()
     unresolved_conflicts: tuple[str, ...] = ()
     tradeoffs: tuple[str, ...] = ()
+    metrics: dict[str, MetricValue] = Field(default_factory=dict)
 
     @field_validator("statement", "policy_profile")
     @classmethod
@@ -797,6 +802,39 @@ class PolicyEvaluationSummary(ContractModel):
     @classmethod
     def _policy_nonblank(cls, value: str) -> str:
         return _nonblank(value, "policy_profile")
+
+
+class PolicyEvaluationResult(PolicyEvaluationSummary):
+    evaluated_findings: tuple[EvaluatedFinding, ...] = ()
+    repair_eligible_finding_ids: tuple[str, ...] = ()
+    exit_code: int = 0
+    reasons: tuple[str, ...] = ()
+
+    @field_validator("repair_eligible_finding_ids", "reasons")
+    @classmethod
+    def _result_tuple_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for item in value:
+            _nonblank(item, "policy result tuple field")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_counts(self) -> "PolicyEvaluationResult":
+        counts = {outcome: 0 for outcome in PolicyOutcome}
+        for finding in self.evaluated_findings:
+            counts[finding.policy_outcome] += 1
+        if (
+            self.violations != counts[PolicyOutcome.violation]
+            or self.allowed_overlaps != counts[PolicyOutcome.allowed_overlap]
+            or self.review_items != counts[PolicyOutcome.review_item]
+            or self.not_applicable != counts[PolicyOutcome.not_applicable]
+        ):
+            raise ValueError("policy result counts must match evaluated findings")
+        expected_exit = 2 if self.violations else 0
+        if self.exit_code != expected_exit:
+            raise ValueError(
+                "policy result exit code must be 0 or 2 based on violations"
+            )
+        return self
 
 
 class ReproducibilityMetadata(ContractModel):

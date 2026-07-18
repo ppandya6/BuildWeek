@@ -57,7 +57,7 @@ Task 4 implements semantic schema mapping as a deterministic interpretation laye
 
 Schema mapping records per-field source, confidence, ranked alternatives, and validation messages. Header evidence remains primary, value evidence is limited to transparent signals such as image-like paths, split-like categories, cardinality, uniqueness, and repeated institution-like values, and contradictory strong headers remain dominant. Mapping results are not factual overlap findings and do not evaluate `SplitPolicy`.
 
-Overlap detection, image analysis, graph construction, policy evaluation execution, repair execution, report writing, operational audit CLI behavior, and GPT integration remain pending.
+Report writing, operational audit CLI behavior, and GPT integration remain pending.
 
 ## Canonical records and TCGA lineage
 
@@ -80,3 +80,15 @@ Byte equality is SHA-256 over source bytes and establishes only exact file-conte
 Exact byte duplicates are emitted as the strongest exact image relation. Pixel duplicate findings are emitted for cross-partition canonical pixel groups with different byte hashes, avoiding redundant exact findings. Perceptual candidates require different byte and pixel digests and both configured pHash and dHash distances at or below threshold.
 
 All eligible train images are compared against all eligible test images only when `eligible_train_count * eligible_test_count <= max_image_pairs`. If the limit is exceeded, no partial perceptual comparison is performed; a resource-limit factual warning records the requested and configured counts, while exact digest grouping can still proceed.
+
+## Task 7 relationship graph, policy evaluation, and repair
+
+The relationship graph materializes evidence already emitted by deterministic detectors. It creates one node per canonical record, expands multi-record factual findings into deterministic pairwise edges, and does not create new patient, specimen, slide, institution, byte, pixel, or similarity evidence. Connected components are graph structure only and must not be interpreted as patient identity.
+
+Policy evaluation derives outcomes from an explicit `SplitPolicy` profile. Patient, specimen, slide, byte-content duplicate, and pixel-content duplicate findings become violations when the corresponding disjointness rule is enabled and allowed overlaps otherwise. Institution overlap is allowed by the default profile while preserving warning-level provenance. Image-similarity candidates are review items by default and only become violations when the explicit similarity-failure policy flag is enabled. Image-read errors, resource limits, and ambiguous categories remain review items.
+
+Repair eligibility is narrower than policy violation status. Only exact or confirmed patient, specimen, slide, byte duplicate, and pixel duplicate violations are eligible by default. Similarity candidates, input-quality findings, and ambiguous findings remain outside repair. Institution grouping is excluded by default and can only be included through the explicit `group_by_institution` option, which intentionally groups by provenance rather than identity and may reduce split flexibility.
+
+Repair components are indivisible connected components over eligible relationships plus singleton components for unlinked records. The greedy assignment sorts components by descending size, descending cross-partition eligible-finding count, then smallest record ID. For each component, assignment candidates are compared lexicographically by absolute target train-count deviation, aggregate label-distribution deviation when labels are complete, moved-record count, then a deterministic train-before-test tie-break. Missing labels skip the label objective and are reported as a tradeoff.
+
+Every repair output is a proposed partition requiring researcher review. Proposals preserve every input record exactly once, disclose impossible exact target fractions, oversized components, material label differences, institution grouping choices, similarity-candidate exclusion, and input-quality limitations without claiming scientific correctness or publication readiness.
