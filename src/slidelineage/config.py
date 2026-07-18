@@ -45,6 +45,8 @@ class AuditConfig(BaseModel):
     )
     force: bool = False
     repair: bool = False
+    group_by_institution: bool = False
+    target_train_fraction: float | None = Field(default=None, gt=0, lt=1)
     policy_profile: str = DEFAULT_POLICY_PROFILE
     max_image_pairs: int = Field(default=100_000, gt=0)
     phash_distance_threshold: int = Field(default=8, ge=0, le=64)

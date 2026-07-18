@@ -131,3 +131,47 @@ class ImageUnreadableError(ImageFingerprintError):
 
 class ImageSafetyError(ImageFingerprintError):
     """Raised when image safety limits are exceeded."""
+
+
+class GraphConstructionError(SlideLineageError):
+    """Raised when relationship graph construction receives invalid inputs."""
+
+
+class GraphReferenceError(GraphConstructionError):
+    """Raised when graph edges reference missing records or findings."""
+
+
+class PolicyEvaluationError(SlideLineageError):
+    """Raised when policy evaluation contracts are internally inconsistent."""
+
+
+class RepairError(SlideLineageError):
+    """Raised when deterministic repair proposal construction fails."""
+
+
+class InvalidTargetFractionError(RepairError):
+    """Raised when a repair target train fraction is invalid."""
+
+
+class RepairAssignmentError(RepairError):
+    """Raised when repair components cannot be assigned consistently."""
+
+
+class AuditExecutionError(SlideLineageError):
+    """Raised when deterministic audit orchestration fails."""
+
+
+class OutputDirectoryError(AuditExecutionError):
+    """Raised when an audit output directory is unsafe to use."""
+
+
+class ArtifactWriteError(AuditExecutionError):
+    """Raised when report artifact writing fails."""
+
+
+class ReportSerializationError(ArtifactWriteError):
+    """Raised when report serialization fails validation."""
+
+
+class ReportTemplateError(ArtifactWriteError):
+    """Raised when HTML report rendering fails."""

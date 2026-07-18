@@ -20,6 +20,12 @@ class Partition(StrEnum):
     test = "test"
 
 
+class AuditStatus(StrEnum):
+    passed = "passed"
+    policy_violations = "policy_violations"
+    failed = "failed"
+
+
 class PolicyOutcome(StrEnum):
     violation = "violation"
     allowed_overlap = "allowed_overlap"
@@ -603,12 +609,15 @@ class EvaluatedFinding(FindingBase):
     """Policy-evaluated finding with an explicit policy outcome and reason."""
 
     policy_outcome: PolicyOutcome
+    policy_rule: str = "unspecified_policy_rule"
     policy_reason: str
+    policy_profile: str = DEFAULT_POLICY_PROFILE
+    repair_eligible: bool = False
 
-    @field_validator("policy_reason")
+    @field_validator("policy_reason", "policy_rule", "policy_profile")
     @classmethod
-    def _policy_reason_nonblank(cls, value: str) -> str:
-        return _nonblank(value, "policy_reason")
+    def _policy_text_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "policy evaluation text")
 
 
 class GraphNode(ContractModel):
@@ -669,6 +678,7 @@ class RepairComponent(ContractModel):
     original_partition_counts: PartitionCount = Field(default_factory=dict)
     label_counts: LabelCount = Field(default_factory=dict)
     proposed_partition: Partition | None = None
+    conflict_status: str | None = None
 
     @field_validator("component_id")
     @classmethod
@@ -722,6 +732,7 @@ class RepairProposal(ContractModel):
     decisions: tuple[RepairDecision, ...] = ()
     unresolved_conflicts: tuple[str, ...] = ()
     tradeoffs: tuple[str, ...] = ()
+    metrics: dict[str, MetricValue] = Field(default_factory=dict)
 
     @field_validator("statement", "policy_profile")
     @classmethod
@@ -777,6 +788,8 @@ class InputSummary(ContractModel):
     manifests: tuple[SourceManifest, ...] = ()
     image_root: Path | None = None
     total_records: int = Field(default=0, ge=0)
+    train_records: int = Field(default=0, ge=0)
+    test_records: int = Field(default=0, ge=0)
 
 
 class FindingSummary(ContractModel):
@@ -784,6 +797,7 @@ class FindingSummary(ContractModel):
     evaluated_finding_count: int = Field(default=0, ge=0)
     review_item_count: int = Field(default=0, ge=0)
     violation_count: int = Field(default=0, ge=0)
+    metrics: dict[str, MetricValue] = Field(default_factory=dict)
 
 
 class PolicyEvaluationSummary(ContractModel):
@@ -799,10 +813,50 @@ class PolicyEvaluationSummary(ContractModel):
         return _nonblank(value, "policy_profile")
 
 
+class PolicyEvaluationResult(PolicyEvaluationSummary):
+    evaluated_findings: tuple[EvaluatedFinding, ...] = ()
+    repair_eligible_finding_ids: tuple[str, ...] = ()
+    exit_code: int = 0
+    reasons: tuple[str, ...] = ()
+
+    @field_validator("repair_eligible_finding_ids", "reasons")
+    @classmethod
+    def _result_tuple_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for item in value:
+            _nonblank(item, "policy result tuple field")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_counts(self) -> "PolicyEvaluationResult":
+        counts = {outcome: 0 for outcome in PolicyOutcome}
+        for finding in self.evaluated_findings:
+            counts[finding.policy_outcome] += 1
+        if (
+            self.violations != counts[PolicyOutcome.violation]
+            or self.allowed_overlaps != counts[PolicyOutcome.allowed_overlap]
+            or self.review_items != counts[PolicyOutcome.review_item]
+            or self.not_applicable != counts[PolicyOutcome.not_applicable]
+        ):
+            raise ValueError("policy result counts must match evaluated findings")
+        expected_exit = 2 if self.violations else 0
+        if self.exit_code != expected_exit:
+            raise ValueError(
+                "policy result exit code must be 0 or 2 based on violations"
+            )
+        return self
+
+
 class ReproducibilityMetadata(ContractModel):
     config_digest: str
     python_version: str
+    slidelineage_version: str | None = None
     dependency_versions: dict[str, str] = Field(default_factory=dict)
+    manifest_sha256: dict[str, str] = Field(default_factory=dict)
+    parser_versions: tuple[str, ...] = ()
+    detector_versions: tuple[str, ...] = ()
+    image_thresholds: dict[str, int] = Field(default_factory=dict)
+    policy_profile: str | None = None
+    report_schema_version: str = "1.0.0"
 
     @field_validator("config_digest", "python_version")
     @classmethod
@@ -939,6 +993,22 @@ class FactualDetectionResult(ContractModel):
         return self
 
 
+class AuditArtifactPaths(ContractModel):
+    output_dir: Path
+    report_json: Path
+    report_html: Path
+    findings_csv: Path
+    repair_proposal_csv: Path | None = None
+
+
+class AuditRunResult(ContractModel):
+    report: "AuditReport"
+    artifacts: AuditArtifactPaths | None = None
+    exit_code: int = Field(ge=0)
+    terminal_summary: str
+    warnings: tuple[str, ...] = ()
+
+
 class AuditReport(ContractModel):
     schema_version: Literal["1.0.0"] = "1.0.0"
     tool: ToolMetadata
@@ -947,7 +1017,10 @@ class AuditReport(ContractModel):
     configuration: AuditConfig
     policy: SplitPolicy
     schema_mapping: SchemaMapping | None = None
+    schema_mappings: dict[str, object] | None = None
+    status: AuditStatus = AuditStatus.passed
     summary: FindingSummary
+    canonical_records: tuple[CanonicalRecord, ...] = ()
     factual_findings: tuple[FactualFinding, ...] = ()
     evaluated_findings: tuple[EvaluatedFinding, ...] = ()
     relationship_graph: RelationshipGraph
