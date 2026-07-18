@@ -45,6 +45,7 @@ class SchemaMappingSource(StrEnum):
     explicit_user_mapping = "explicit_user_mapping"
     accepted_validated_ai_mapping = "accepted_validated_ai_mapping"
     deterministic_mapping = "deterministic_mapping"
+    validated_ai_mapping = "validated_ai_mapping"
     unresolved = "unresolved"
 
 
@@ -493,6 +494,103 @@ class SchemaMapping(ContractModel):
                     f"mapping {attribute!r} must have semantic_field {attribute!r}"
                 )
         return self
+
+
+AiRationaleCode = Literal[
+    "header_alias",
+    "cross_manifest_header_alignment",
+    "value_pattern_support",
+    "insufficient_evidence",
+    "ambiguous_candidates",
+]
+
+
+class AiColumnSummary(ContractModel):
+    original_header: str
+    normalized_header: str
+    nonblank_count: int = Field(ge=0)
+    missing_count: int = Field(ge=0)
+    unique_count: int = Field(ge=0)
+    approximate_cardinality_ratio: float = Field(ge=0, le=1)
+    example_categories: tuple[str, ...] = ()
+    value_pattern_flags: tuple[str, ...] = ()
+
+
+class AiManifestSchemaSummary(ContractModel):
+    manifest_id: str
+    assigned_partition: Partition
+    columns: tuple[AiColumnSummary, ...]
+    row_count: int = Field(ge=0)
+    unresolved_semantic_fields: tuple[str, ...]
+    deterministic_mapping_summary: dict[str, str]
+
+
+class AiSchemaRequest(ContractModel):
+    request_schema_version: Literal["1.0"] = "1.0"
+    supported_semantic_fields: tuple[str, ...]
+    train_summary: AiManifestSchemaSummary
+    test_summary: AiManifestSchemaSummary
+    instructions_digest: str
+    privacy_notice: str
+    model: str
+
+
+class AiProposedFieldMapping(ContractModel):
+    semantic_field: str
+    train_source_column: str | None = None
+    test_source_column: str | None = None
+    confidence: float = Field(ge=0, le=1)
+    rationale_code: AiRationaleCode
+    requires_review: bool = True
+
+
+class AiSchemaProposal(ContractModel):
+    proposal_id: str
+    model: str
+    response_id: str | None = None
+    request_digest: str
+    proposed_fields: tuple[AiProposedFieldMapping, ...]
+    model_output_digest: str
+    generated_at: datetime
+    provider: str = "openai"
+
+
+class AiFieldValidation(ContractModel):
+    semantic_field: str
+    accepted: bool
+    train_source_column: str | None = None
+    test_source_column: str | None = None
+    confidence: float
+    validation_codes: tuple[str, ...]
+    validation_messages: tuple[str, ...]
+
+
+class ValidatedAiSchemaProposal(ContractModel):
+    proposal: AiSchemaProposal
+    field_validations: tuple[AiFieldValidation, ...]
+    accepted_fields: tuple[str, ...]
+    rejected_fields: tuple[str, ...]
+    fully_valid: bool
+    applied: bool = False
+    acceptance_requested: bool = False
+
+
+class AiUsageRecord(ContractModel):
+    enabled: bool = False
+    proposal_requested: bool = False
+    proposal_received: bool = False
+    proposal_validated: bool = False
+    acceptance_requested: bool = False
+    accepted_field_count: int = 0
+    rejected_field_count: int = 0
+    model: str | None = None
+    provider: str | None = None
+    request_digest: str | None = None
+    proposal_id: str | None = None
+    response_id: str | None = None
+    privacy_summary: str
+    warnings: tuple[str, ...] = ()
+    validated_proposal: ValidatedAiSchemaProposal | None = None
 
 
 class EvidenceRecord(ContractModel):
@@ -1018,6 +1116,9 @@ class AuditReport(ContractModel):
     policy: SplitPolicy
     schema_mapping: SchemaMapping | None = None
     schema_mappings: dict[str, object] | None = None
+    ai_schema_assistance: AiUsageRecord = AiUsageRecord(
+        privacy_summary="AI disabled; no data sent to an AI provider."
+    )
     status: AuditStatus = AuditStatus.passed
     summary: FindingSummary
     canonical_records: tuple[CanonicalRecord, ...] = ()

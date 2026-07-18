@@ -78,3 +78,13 @@ def test_cli_invalid_policy_and_threshold(tmp_path: Path) -> None:
         app, _args(tmp_path / "t2") + ["--max-image-pairs", "0"]
     )
     assert bad_threshold.exit_code == 1
+
+
+def test_cli_ai_help_and_acceptance_requires_enablement(tmp_path: Path) -> None:
+    help_result = runner.invoke(app, ["audit", "--help"])
+    assert "--ai-schema-map" in help_result.output
+    assert "aggregate" in help_result.output and "statistics" in help_result.output
+    result = runner.invoke(app, _args(tmp_path) + ["--accept-validated-ai-mapping"])
+    assert result.exit_code == 1
+    assert "requires ai_schema_map" in result.output
+    assert "Traceback" not in result.output

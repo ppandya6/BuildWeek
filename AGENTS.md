@@ -99,3 +99,10 @@ Future demo changes must remain entirely synthetic, avoid medical claims, preser
 the expected identifier, byte, pixel, similarity, institution, and input-quality
 relationship categories, preserve deterministic generation, keep committed data
 small, and update end-to-end tests whenever fixture semantics change.
+
+## Task 10 AI schema-assistance constraints
+
+Future work must keep AI optional, send no raw rows or images, deterministically
+validate every semantic-column proposal, and require explicit acceptance before
+application. AI must never create findings, policy outcomes, or repair decisions.
+Record model/provider provenance, mock every AI call, and keep CI network-free.

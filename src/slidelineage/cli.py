@@ -90,6 +90,25 @@ def audit(
         int, typer.Option("--dhash-distance-threshold")
     ] = 12,
     image_max_pixels: Annotated[int, typer.Option("--image-max-pixels")] = 25_000_000,
+    ai_schema_map: Annotated[
+        bool,
+        typer.Option(
+            "--ai-schema-map",
+            help=(
+                "Optional AI mapping: sends headers and aggregate statistics, never "
+                "raw rows or images; proposals are deterministically validated but "
+                "not applied without acceptance."
+            ),
+        ),
+    ] = False,
+    accept_validated_ai_mapping: Annotated[
+        bool,
+        typer.Option(
+            "--accept-validated-ai-mapping",
+            help="Explicitly apply only deterministically validated AI mappings.",
+        ),
+    ] = False,
+    ai_model: Annotated[str, typer.Option("--ai-model")] = "gpt-5.6",
 ) -> None:
     """Run a local deterministic audit and write report artifacts."""
 
@@ -116,6 +135,9 @@ def audit(
             phash_distance_threshold=phash_distance_threshold,
             dhash_distance_threshold=dhash_distance_threshold,
             image_max_pixels=image_max_pixels,
+            ai_schema_map=ai_schema_map,
+            accept_validated_ai_mapping=accept_validated_ai_mapping,
+            ai_model=ai_model,
         )
         result = run_audit(config)
     except (SlideLineageError, ValidationError, ValueError) as exc:

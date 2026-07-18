@@ -80,7 +80,29 @@ Task 4 implements semantic schema mapping as a deterministic interpretation laye
 
 Schema mapping records per-field source, confidence, ranked alternatives, and validation messages. Header evidence remains primary, value evidence is limited to transparent signals such as image-like paths, split-like categories, cardinality, uniqueness, and repeated institution-like values, and contradictory strong headers remain dominant. Mapping results are not factual overlap findings and do not evaluate `SplitPolicy`.
 
-Report writing and operational audit CLI behavior are implemented. Optional GPT integration remains pending.
+Report writing, the operational CLI, and optional AI schema proposals are implemented.
+
+## Task 10 optional AI schema interpretation
+
+AI runs only after deterministic schema mapping and before canonical record
+construction, and only for unresolved semantic fields. The request contains
+headers, row/missing/unique counts, rounded cardinality, abstract pattern flags,
+and deterministic mapping status. It excludes literal cells, raw rows, manifest
+paths and bytes, identifiers, image paths, and image bytes. Headers may themselves
+be sensitive, so provider access is explicit opt-in.
+
+An AI response is a proposal, never evidence. A deterministic validator checks
+supported fields, real unambiguous columns, protected prior mappings, confidence,
+and source reuse independently for each field. Validated fields remain unapplied
+unless the researcher supplies the acceptance flag. Provider or SDK failures are
+reported accurately; an already viable deterministic audit can continue, while
+missing minimum schema coverage remains a focused failure.
+
+Header-based interpretation is inherently limited and provider/model outputs may
+vary. Model, provider, request digest, proposal digest, response ID, validation,
+application state, and privacy notice are recorded, but raw provider payloads are
+not. Detectors, graph construction, policy evaluation, and repair consume only
+canonical records and remain deterministic; AI creates none of their outputs.
 
 ## Canonical records and TCGA lineage
 

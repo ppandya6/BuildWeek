@@ -55,6 +55,9 @@ class AuditConfig(BaseModel):
     schema_map_path: Path | None = None
     ai_schema_map: bool = False
     accept_validated_ai_mapping: bool = False
+    ai_model: str = "gpt-5.6"
+    ai_request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    ai_min_confidence: float = Field(default=0.75, ge=0, le=1)
     patient_column: str | None = None
     specimen_column: str | None = None
     slide_column: str | None = None

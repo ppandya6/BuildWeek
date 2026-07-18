@@ -51,6 +51,8 @@ def test_json_csv_html_outputs_are_valid_and_escaped(tmp_path: Path) -> None:
     }
     html = result.artifacts.report_html.read_text(encoding="utf-8")
     assert "<html" in html and "No clinical interpretation" in html
+    assert "AI schema assistance" in html
+    assert "AI did not produce scientific findings" in html
     assert "http://" not in html and "https://" not in html
 
 

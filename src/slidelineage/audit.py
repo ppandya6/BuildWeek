@@ -7,11 +7,21 @@ from datetime import UTC, datetime
 from importlib import metadata
 
 from slidelineage import __version__
+from slidelineage.ai_schema import (
+    PRIVACY_NOTICE,
+    ai_request_digest,
+    apply_validated_ai_schema_proposal,
+    build_ai_schema_request,
+    request_ai_schema_proposal,
+    validate_ai_schema_proposal,
+)
 from slidelineage.config import AuditConfig
 from slidelineage.detectors import run_factual_detectors
+from slidelineage.errors import AiSchemaError, InsufficientSchemaCoverageError
 from slidelineage.graph import build_relationship_graph
 from slidelineage.ingest import load_manifest
 from slidelineage.models import (
+    AiUsageRecord,
     AuditReport,
     AuditRunResult,
     AuditStatus,
@@ -30,7 +40,7 @@ from slidelineage.policy_evaluation import evaluate_findings
 from slidelineage.records import construct_record_pair
 from slidelineage.repair import propose_repair
 from slidelineage.reporting import prepare_output_directory, write_audit_artifacts
-from slidelineage.schema_mapping import map_manifest_pair
+from slidelineage.schema_mapping import ManifestSchemaMappings, map_manifest_pair
 
 
 def run_audit(config: AuditConfig) -> AuditRunResult:
@@ -42,6 +52,7 @@ def run_audit(config: AuditConfig) -> AuditRunResult:
     test = load_manifest(config.test_manifest, Partition.test, "test_manifest")
     loaded_pair = LoadedManifestPair(train=train, test=test)
     mappings = map_manifest_pair(loaded_pair, config)
+    mappings, ai_usage, ai_warnings = _assist_schema(loaded_pair, mappings, config)
     records = construct_record_pair(loaded_pair, mappings)
     detections = run_factual_detectors(records, config)
     graph = build_relationship_graph(records, detections.all_findings)
@@ -85,6 +96,7 @@ def run_audit(config: AuditConfig) -> AuditRunResult:
         policy=policy,
         schema_mapping=mappings.train,
         schema_mappings=mappings.model_dump(mode="json"),
+        ai_schema_assistance=ai_usage,
         status=status,
         summary=_summary(records, detections.all_findings, policy_result, repair),
         canonical_records=canonical_records,
@@ -109,6 +121,7 @@ def run_audit(config: AuditConfig) -> AuditRunResult:
             records.train.warnings,
             records.test.warnings,
             detections.warnings,
+            ai_warnings,
         ),
     )
     terminal_summary = _terminal_summary(report, config.output_dir)
@@ -120,6 +133,105 @@ def run_audit(config: AuditConfig) -> AuditRunResult:
     )
     artifacts = write_audit_artifacts(result, config.output_dir)
     return result.model_copy(update={"artifacts": artifacts})
+
+
+def _assist_schema(
+    pair: LoadedManifestPair,
+    mappings: ManifestSchemaMappings,
+    config: AuditConfig,
+) -> tuple[ManifestSchemaMappings, AiUsageRecord, tuple[str, ...]]:
+    disabled = AiUsageRecord(
+        enabled=False, privacy_summary="AI disabled; no data sent to an AI provider."
+    )
+    if not config.ai_schema_map:
+        return mappings, disabled, ()
+    acceptance = config.accept_validated_ai_mapping
+    unresolved = set(mappings.train.unresolved_fields) | set(
+        mappings.test.unresolved_fields
+    )
+    if not unresolved:
+        warning = (
+            "AI schema assistance was enabled but unnecessary; no request was sent."
+        )
+        return (
+            mappings,
+            AiUsageRecord(
+                enabled=True,
+                acceptance_requested=acceptance,
+                model=config.ai_model,
+                provider="openai",
+                privacy_summary=PRIVACY_NOTICE,
+                warnings=(warning,),
+            ),
+            (warning,),
+        )
+    request = build_ai_schema_request(pair.train, pair.test, mappings, config)
+    digest = ai_request_digest(request)
+    try:
+        proposal = request_ai_schema_proposal(request, config)
+        validated = validate_ai_schema_proposal(proposal, pair, mappings)
+        applied = apply_validated_ai_schema_proposal(
+            mappings, validated, accept=acceptance
+        )
+        applied_count = len(validated.accepted_fields) if acceptance else 0
+        validated = validated.model_copy(
+            update={
+                "acceptance_requested": acceptance,
+                "applied": applied_count > 0,
+            }
+        )
+        usage = AiUsageRecord(
+            enabled=True,
+            proposal_requested=True,
+            proposal_received=True,
+            proposal_validated=True,
+            acceptance_requested=acceptance,
+            accepted_field_count=len(validated.accepted_fields),
+            rejected_field_count=len(validated.rejected_fields),
+            model=proposal.model,
+            provider=proposal.provider,
+            request_digest=digest,
+            proposal_id=proposal.proposal_id,
+            response_id=proposal.response_id,
+            privacy_summary=PRIVACY_NOTICE,
+            warnings=()
+            if acceptance
+            else (
+                "Validated AI proposal was not applied; explicit acceptance is "
+                "required.",
+            ),
+            validated_proposal=validated,
+        )
+        mappings = applied
+    except AiSchemaError as exc:
+        if not _minimum_coverage(mappings):
+            raise
+        warning = f"AI schema assistance failed; deterministic audit continued: {exc}"
+        usage = AiUsageRecord(
+            enabled=True,
+            proposal_requested=True,
+            acceptance_requested=acceptance,
+            model=config.ai_model,
+            provider="openai",
+            request_digest=digest,
+            privacy_summary=PRIVACY_NOTICE,
+            warnings=(warning,),
+        )
+        return mappings, usage, (warning,)
+    if not _minimum_coverage(mappings):
+        raise InsufficientSchemaCoverageError(
+            "schema mapping still requires image_path or source_record_id after AI "
+            "assistance"
+        )
+    return mappings, usage, usage.warnings
+
+
+def _minimum_coverage(mappings: ManifestSchemaMappings) -> bool:
+    return all(
+        mapping.image_path.source_column is not None
+        or mapping.source_record_id.source_column is not None
+        for mapping in (mappings.train, mappings.test)
+    )
 
 
 def _summary(records, findings, policy_result, repair) -> FindingSummary:  # type: ignore[no-untyped-def]
@@ -206,6 +318,17 @@ def _terminal_summary(report: AuditReport, output_dir) -> str:  # type: ignore[n
         f"Policy violations: {report.policy_evaluation.violations}",
         f"Review items: {report.policy_evaluation.review_items}",
         f"Repair proposal: {repair}",
+        "AI schema assistance: "
+        + (
+            "applied"
+            if report.ai_schema_assistance.validated_proposal
+            and report.ai_schema_assistance.validated_proposal.applied
+            else "proposed only"
+            if report.ai_schema_assistance.proposal_received
+            else "enabled; no proposal"
+            if report.ai_schema_assistance.enabled
+            else "disabled"
+        ),
         f"Output: {output_dir}",
         "Artifacts: report.json, report.html, findings.csv"
         + (", repair_proposal.csv" if report.repair_proposal else ""),

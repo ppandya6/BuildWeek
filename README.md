@@ -44,10 +44,38 @@ syntax.
 python -m pip install -e ".[dev]"
 ```
 
-Optional AI dependencies are intentionally separate and should only be installed when later AI-assisted schema interpretation is implemented:
+Optional AI-assisted schema interpretation is installed separately:
 
 ```bash
 python -m pip install -e ".[dev,ai]"
+```
+
+AI is explicit opt-in. Headers and aggregate missingness, uniqueness, cardinality,
+and abstract pattern flags may leave the machine; raw rows, literal values, image
+paths, and image bytes remain local. Because headers can themselves be sensitive,
+review them before enabling AI. Proposals are deterministically validated, but
+validation alone does not apply them. Explicit acceptance is required, and AI
+never creates scientific findings, policy decisions, or repairs.
+
+Proposal-only mode:
+
+```bash
+slidelineage audit \
+  --train train.csv \
+  --test test.csv \
+  --output artifacts/audit \
+  --ai-schema-map
+```
+
+Explicitly accepted mode:
+
+```bash
+slidelineage audit \
+  --train train.csv \
+  --test test.csv \
+  --output artifacts/audit \
+  --ai-schema-map \
+  --accept-validated-ai-mapping
 ```
 
 ## Verification commands
@@ -97,7 +125,7 @@ SlideLineage is distributed under the MIT License. See [LICENSE](LICENSE).
 
 Relationship graph contracts and deterministic materialization now exist for canonical records and factual findings. Explicit `SplitPolicy` evaluation converts factual findings into evaluated findings with policy outcomes, rules, reasons, counts, exit-code semantics, and repair eligibility. Deterministic repair proposals now construct indivisible components, run a typed greedy train/test assignment, preserve all records, and report proposal metrics and tradeoffs for researcher review.
 
-Still pending for later tasks: optional GPT integration and Task 10 packaging/automation.
+Still pending for Task 11: packaging and automation work outside milestone Task 10.
 
 ## Operational audit quick start
 
