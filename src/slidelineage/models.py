@@ -54,6 +54,15 @@ class IdentifierStatus(StrEnum):
     unresolved = "unresolved"
 
 
+class ImageReadStatus(StrEnum):
+    resolved = "resolved"
+    missing = "missing"
+    outside_root = "outside_root"
+    unreadable = "unreadable"
+    unsafe_image = "unsafe_image"
+    unsupported_format = "unsupported_format"
+
+
 class RecordIdMethod(StrEnum):
     source_column = "source_column"
     canonical_row_fingerprint = "canonical_row_fingerprint"
@@ -799,6 +808,135 @@ class ReproducibilityMetadata(ContractModel):
     @classmethod
     def _nonblank_required(cls, value: str) -> str:
         return _nonblank(value, "reproducibility required field")
+
+
+class ImageFingerprint(ContractModel):
+    record_id: str
+    assigned_partition: Partition
+    source_manifest_id: str
+    source_row_number: int = Field(ge=0)
+    source_image_path: str
+    resolved_path: str | None = None
+    status: ImageReadStatus
+    byte_sha256: str | None = None
+    canonical_pixel_sha256: str | None = None
+    width: int | None = Field(default=None, gt=0)
+    height: int | None = Field(default=None, gt=0)
+    image_format: str | None = None
+    phash: str | None = None
+    dhash: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    detector_version: str
+
+    @field_validator(
+        "record_id", "source_manifest_id", "source_image_path", "detector_version"
+    )
+    @classmethod
+    def _image_required_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "image fingerprint required field")
+
+    @field_validator("byte_sha256", "canonical_pixel_sha256")
+    @classmethod
+    def _optional_sha256(cls, value: str | None) -> str | None:
+        if value is not None and (
+            len(value) != 64 or any(c not in "0123456789abcdef" for c in value)
+        ):
+            raise ValueError(
+                "image SHA-256 fields must be lowercase 64-character hexadecimal text"
+            )
+        return value
+
+    @field_validator("phash", "dhash")
+    @classmethod
+    def _optional_hash64(cls, value: str | None) -> str | None:
+        if value is not None and (
+            len(value) != 16 or any(c not in "0123456789abcdef" for c in value)
+        ):
+            raise ValueError(
+                "perceptual hashes must be fixed-width lowercase "
+                "64-bit hexadecimal text"
+            )
+        return value
+
+    @model_validator(mode="after")
+    def _status_consistency(self) -> "ImageFingerprint":
+        if self.status is ImageReadStatus.resolved:
+            required = (
+                self.resolved_path,
+                self.byte_sha256,
+                self.canonical_pixel_sha256,
+                self.width,
+                self.height,
+                self.image_format,
+                self.phash,
+                self.dhash,
+            )
+            if any(v is None for v in required):
+                raise ValueError(
+                    "resolved image fingerprints require hashes, dimensions, "
+                    "format, and resolved path"
+                )
+            if self.error_code is not None or self.error_message is not None:
+                raise ValueError(
+                    "resolved image fingerprints cannot carry error fields"
+                )
+        elif any(
+            v is not None
+            for v in (
+                self.byte_sha256,
+                self.canonical_pixel_sha256,
+                self.width,
+                self.height,
+                self.image_format,
+                self.phash,
+                self.dhash,
+            )
+        ):
+            raise ValueError(
+                "failed image fingerprints must not include successful "
+                "fingerprint fields"
+            )
+        return self
+
+
+class ImageFingerprintCollection(ContractModel):
+    fingerprints: tuple[ImageFingerprint, ...] = ()
+    resolved_count: int = Field(ge=0)
+    missing_count: int = Field(ge=0)
+    unreadable_count: int = Field(ge=0)
+    unsafe_count: int = Field(ge=0)
+    pair_count_considered: int = Field(ge=0)
+    pair_limit_exceeded: bool = False
+    warnings: tuple[str, ...] = ()
+
+    @field_validator("warnings")
+    @classmethod
+    def _image_warnings_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for warning in value:
+            _nonblank(warning, "image fingerprint warning")
+        return value
+
+
+class FactualDetectionResult(ContractModel):
+    identifier_findings: tuple[FactualFinding, ...] = ()
+    image_findings: tuple[FactualFinding, ...] = ()
+    input_quality_findings: tuple[FactualFinding, ...] = ()
+    all_findings: tuple[FactualFinding, ...] = ()
+    image_fingerprints: ImageFingerprintCollection
+    warnings: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def _all_findings_match_components(self) -> "FactualDetectionResult":
+        expected = (
+            self.identifier_findings + self.image_findings + self.input_quality_findings
+        )
+        if self.all_findings != expected:
+            raise ValueError(
+                "all_findings must concatenate identifier, image, "
+                "and input-quality findings"
+            )
+        return self
 
 
 class AuditReport(ContractModel):

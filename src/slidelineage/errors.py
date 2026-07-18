@@ -111,3 +111,23 @@ class TcgaParseError(SlideLineageError):
 
 class MalformedTcgaIdentifierError(TcgaParseError):
     """Raised when a TCGA-like identifier is malformed."""
+
+
+class ImageFingerprintError(SlideLineageError):
+    """Raised when image fingerprint configuration or processing fails."""
+
+
+class ImagePathResolutionError(ImageFingerprintError):
+    """Raised when image path resolution cannot proceed safely."""
+
+
+class ImageOutsideRootError(ImagePathResolutionError):
+    """Raised when an image path escapes the configured image root."""
+
+
+class ImageUnreadableError(ImageFingerprintError):
+    """Raised when an image cannot be decoded or read."""
+
+
+class ImageSafetyError(ImageFingerprintError):
+    """Raised when image safety limits are exceeded."""

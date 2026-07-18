@@ -49,3 +49,13 @@ These contracts describe schema interpretation only. They do not create `Factual
 Task 5 adds canonical record collection contracts for later reports. `CanonicalManifestRecords` groups source-row ordered `CanonicalRecord` objects with identifier provenance, typed lineage conflicts, and deterministic warnings for one manifest. `CanonicalRecordPair` validates train/test partitions and distinct manifest IDs.
 
 `IdentifierProvenance` records whether a semantic identifier came from a direct manifest value, TCGA derivation, or was unavailable, with status `accepted`, `conflicted`, or `unresolved`. `LineageConflict` preserves direct and derived values, parser version, source column, stable conflict ID, and non-clinical review messaging. These contracts still do not emit overlap findings, graph edges, policy outcomes, repairs, or report files.
+
+## Task 6 image fingerprint and factual detector contracts
+
+`ImageReadStatus` records local image-read outcomes: `resolved`, `missing`, `outside_root`, `unreadable`, `unsafe_image`, and `unsupported_format`.
+
+`ImageFingerprint` is frozen and forbids extras. It preserves record ID, assigned partition, manifest ID, zero-based source row number, original source image path, optional local resolved path, status, byte SHA-256, canonical RGB pixel SHA-256, dimensions, image format, 64-bit lowercase pHash/dHash, optional error code/message, and detector version. Successful fingerprints require hashes, dimensions, format, and resolved path. Failed fingerprints keep error evidence and do not pretend hashes exist.
+
+`ImageFingerprintCollection` stores deterministic fingerprint tuples plus resolved, missing, unreadable, unsafe, all-pairs count, pair-limit, and warning fields.
+
+`FactualDetectionResult` separates `identifier_findings`, exact/probable `image_findings`, and `input_quality_findings`. `all_findings` must equal those categories concatenated in that deterministic order. These findings do not contain `PolicyOutcome`; policy evaluation remains a later stage.

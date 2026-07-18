@@ -68,3 +68,15 @@ Raw value digests are SHA-256 over canonical JSON containing original header nam
 TCGA parsing is strict, case-insensitive, full-string parsing for participant, sample, portion/analyte, and plate/center barcodes. Malformed TCGA-like values raise parse errors; a parse failure must not be treated as proof of unrelatedness. Derived TCGA patient/specimen identifiers are fallback candidates only. If direct and derived lineage values differ after conservative comparison, the direct value is retained in the canonical record, provenance is marked conflicted, both values are preserved in a `LineageConflict`, and future detectors must exclude that conflicted identifier unless explicitly resolved.
 
 A mapped partition column is metadata only. The CLI-assigned train/test partition remains authoritative; conflicting or validation-like partition-column values become deterministic warnings and never alter the assigned partition.
+
+## Task 6 factual detectors and image fingerprints
+
+Task 6 adds detector-stage `FactualFinding` output only. Identifier overlap detection uses accepted, nonconflicted canonical lineage values; conflicted, unresolved, missing, parse-failed, or unsupported-inference values are excluded and absence is never evidence of independence. Patient, specimen, and slide overlaps are confirmed facts when the same normalized value appears in both assigned partitions. Institution overlap remains a factual provenance warning, not a policy result.
+
+Image auditing resolves relative image paths beneath `AuditConfig.images_dir` with `Path.resolve()` containment checks. Paths escaping the image root, missing files, unreadable files, unsupported milestone formats, and oversized unsafe images become typed nonfatal input-quality findings. Milestone image support is limited to Pillow-decoded PNG, JPEG, TIFF, BMP, and WebP first-frame content; whole-slide-image support is not claimed.
+
+Byte equality is SHA-256 over source bytes and establishes only exact file-content duplication. Canonical pixel equality applies EXIF orientation, converts decoded content to RGB, and hashes mode, dimensions, and raw RGB bytes; it can identify identical pixels across different encodings. Perceptual pHash/dHash similarity is probable review evidence only and must never be promoted to patient, specimen, slide, or institution identity.
+
+Exact byte duplicates are emitted as the strongest exact image relation. Pixel duplicate findings are emitted for cross-partition canonical pixel groups with different byte hashes, avoiding redundant exact findings. Perceptual candidates require different byte and pixel digests and both configured pHash and dHash distances at or below threshold.
+
+All eligible train images are compared against all eligible test images only when `eligible_train_count * eligible_test_count <= max_image_pairs`. If the limit is exceeded, no partial perceptual comparison is performed; a resource-limit factual warning records the requested and configured counts, while exact digest grouping can still proceed.
