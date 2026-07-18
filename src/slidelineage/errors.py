@@ -85,6 +85,30 @@ class InsufficientSchemaCoverageError(SchemaMappingError):
     """Raised when neither image_path nor source_record_id can be mapped."""
 
 
+class AiSchemaError(SlideLineageError):
+    """Base error for optional AI schema assistance."""
+
+
+class AiSdkUnavailableError(AiSchemaError):
+    """The optional OpenAI SDK is not installed."""
+
+
+class AiCredentialError(AiSchemaError):
+    """Provider credentials are unavailable or rejected."""
+
+
+class AiRequestError(AiSchemaError):
+    """The provider request failed."""
+
+
+class AiResponseValidationError(AiSchemaError):
+    """The provider response did not match the structured contract."""
+
+
+class AiProposalValidationError(AiSchemaError):
+    """A proposal cannot provide minimum schema coverage."""
+
+
 class RecordConstructionError(SlideLineageError):
     """Raised when canonical records cannot be constructed safely."""
 

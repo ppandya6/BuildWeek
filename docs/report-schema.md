@@ -18,6 +18,7 @@ The report schema is represented by provisional typed Pydantic contracts. The co
 - `configuration`: `AuditConfig`, including deterministic configuration digest behavior.
 - `policy`: `SplitPolicy`, beginning with `patient_independent_pathology_benchmark`.
 - `schema_mapping`: optional `SchemaMapping` with per-field provenance.
+- `ai_schema_assistance`: opt-in request/proposal/validation/application provenance.
 - `summary`: `FindingSummary`.
 - `factual_findings`: immutable sequence of `FactualFinding` detector-stage records without policy outcomes.
 - `evaluated_findings`: immutable sequence of `EvaluatedFinding` records with `PolicyOutcome` and policy reason.
@@ -77,3 +78,13 @@ Task 8 writes `report.json`, `report.html`, and `findings.csv` for every complet
 The repair proposal CSV contains one deterministic row per canonical record with original/proposed partition, component ID, moved flag, label, confirming finding IDs, and the required researcher-review proposal statement. No repair CSV is created when repair is absent.
 
 The standalone HTML report contains scope notices, overview counts, input provenance, schema mappings, findings, text-only image evidence, relationship graph summary, optional repair details, and reproducibility metadata. It is designed for local viewing without remote JavaScript, fonts, stylesheets, analytics, or images.
+
+## Task 10 AI schema-assistance metadata
+
+`ai_schema_assistance` records enablement, request/response/validation status,
+acceptance request, model and provider, request digest, proposal and response IDs,
+accepted/rejected counts, field validation codes/messages, application status,
+privacy disclosure, and warnings. Reports omit API keys, authorization headers,
+literal manifest values, complete request payloads, and raw provider responses.
+The HTML section renders the same bounded provenance with autoescaping and states
+that AI produced no scientific findings, policy outcomes, or repair decisions.

@@ -249,7 +249,7 @@ def map_manifest_schema(
         mappings[SemanticField.image_path].source is SchemaMappingSource.unresolved
         and mappings[SemanticField.source_record_id].source
         is SchemaMappingSource.unresolved
-    ):
+    ) and not config.ai_schema_map:
         raise InsufficientSchemaCoverageError(
             "schema mapping requires image_path or source_record_id"
         )

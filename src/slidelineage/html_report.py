@@ -19,6 +19,7 @@ _TEMPLATE = """<!doctype html>
 <section><h2>Overview</h2><div class="cards"><div class="card">Records: {{ report.inputs.total_records }}</div><div class="card">Confirmed relationships: {{ confirmed_relationships }}</div><div class="card">Policy violations: {{ report.policy_evaluation.violations }}</div><div class="card">Review items: {{ report.policy_evaluation.review_items }}</div><div class="card">Image failures: {{ report.summary.metrics.get('image_input_quality_findings', 0) }}</div><div class="card">Repair moved records: {{ report.summary.metrics.get('moved_records', 0) }}</div></div></section>
 <section><h2>Input provenance</h2><table><tr><th>Manifest</th><th>Path</th><th>SHA-256</th><th>Rows</th></tr>{% for m in report.inputs.manifests %}<tr><td>{{ m.manifest_id }}</td><td>{{ m.path }}</td><td>{{ m.sha256 }}</td><td>{{ m.row_count }}</td></tr>{% endfor %}</table></section>
 <section><h2>Schema mapping</h2><code>{{ schema_mappings }}</code></section>
+<section><h2>AI schema assistance</h2><p>Status: {{ ai_status }}.</p><p>Model: {{ report.ai_schema_assistance.model or 'not used' }}. Provider: {{ report.ai_schema_assistance.provider or 'not used' }}.</p><p>Fields accepted: {{ report.ai_schema_assistance.accepted_field_count }}. Fields rejected: {{ report.ai_schema_assistance.rejected_field_count }}.</p><p>{{ report.ai_schema_assistance.privacy_summary }}</p>{% if report.ai_schema_assistance.validated_proposal %}<table><tr><th>Semantic field</th><th>Accepted</th><th>Validation reasons</th></tr>{% for v in report.ai_schema_assistance.validated_proposal.field_validations %}<tr><td>{{ v.semantic_field }}</td><td>{{ v.accepted }}</td><td>{{ v.validation_messages|join('; ') }}</td></tr>{% endfor %}</table>{% endif %}<p>AI did not produce scientific findings, policy outcomes, or repair decisions.</p></section>
 <section><h2>Findings</h2><input id="filter" oninput="filterFindings()" placeholder="Filter findings"><table><tr><th>Type</th><th>Confirmation</th><th>Policy outcome</th><th>Records</th><th>Evidence summary</th><th>Reason</th></tr>{% for f in report.evaluated_findings %}<tr data-finding><td>{{ f.finding_type }}</td><td>{{ f.confirmation_level }}</td><td>{{ f.policy_outcome }}</td><td>{{ f.record_ids|join(';') }}</td><td>{{ f.evidence|length }} evidence records</td><td>{{ f.policy_reason }}</td></tr>{% endfor %}</table></section>
 <section><h2>Image evidence</h2><p>Text-only image evidence is included in this milestone; thumbnails are deferred to avoid embedding unsafe or unsupported images.</p><table><tr><th>Finding</th><th>Metrics</th></tr>{% for f in image_findings %}<tr><td>{{ f.finding_id }}</td><td>{{ f.metrics }}</td></tr>{% endfor %}</table></section>
 <section><h2>Relationship graph summary</h2><p>Nodes: {{ report.relationship_graph.nodes|length }}. Edges: {{ report.relationship_graph.edges|length }}. Largest connected component size: {{ largest_component }}.</p><code>{{ edge_counts }}</code></section>
@@ -39,6 +40,16 @@ def render_html_report(report: AuditReport) -> str:
             template.render(
                 report=report,
                 schema_mappings=report.schema_mappings or {},
+                ai_status=(
+                    "applied"
+                    if report.ai_schema_assistance.validated_proposal
+                    and report.ai_schema_assistance.validated_proposal.applied
+                    else "proposed only"
+                    if report.ai_schema_assistance.proposal_received
+                    else "enabled; no proposal"
+                    if report.ai_schema_assistance.enabled
+                    else "disabled"
+                ),
                 confirmed_relationships=sum(
                     1
                     for f in report.evaluated_findings
