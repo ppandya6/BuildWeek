@@ -43,3 +43,9 @@ These ingestion contracts are provenance inputs for later report models. They ar
 Task 4 adds implemented typed contracts for deterministic schema mapping. `SchemaMapping` contains one `SchemaFieldMapping` for each supported semantic field with the selected original source column when resolved, the mapping source, confidence, ranked alternatives, and validation messages. `ManifestSchemaMappings` carries train and test mappings plus pair-level mismatch status and validation messages.
 
 These contracts describe schema interpretation only. They do not create `FactualFinding` objects, canonical record IDs, overlap evidence, graph edges, policy outcomes, repair outputs, or report files.
+
+## Canonical record contracts
+
+Task 5 adds canonical record collection contracts for later reports. `CanonicalManifestRecords` groups source-row ordered `CanonicalRecord` objects with identifier provenance, typed lineage conflicts, and deterministic warnings for one manifest. `CanonicalRecordPair` validates train/test partitions and distinct manifest IDs.
+
+`IdentifierProvenance` records whether a semantic identifier came from a direct manifest value, TCGA derivation, or was unavailable, with status `accepted`, `conflicted`, or `unresolved`. `LineageConflict` preserves direct and derived values, parser version, source column, stable conflict ID, and non-clinical review messaging. These contracts still do not emit overlap findings, graph edges, policy outcomes, repairs, or report files.

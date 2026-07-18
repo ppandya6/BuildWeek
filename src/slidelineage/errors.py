@@ -83,3 +83,31 @@ class DuplicateSemanticAssignmentError(SchemaMappingError):
 
 class InsufficientSchemaCoverageError(SchemaMappingError):
     """Raised when neither image_path nor source_record_id can be mapped."""
+
+
+class RecordConstructionError(SlideLineageError):
+    """Raised when canonical records cannot be constructed safely."""
+
+
+class MissingSourceRecordIdError(RecordConstructionError):
+    """Raised when a mapped source-record ID is missing for a row."""
+
+
+class DuplicateSourceRecordIdError(RecordConstructionError):
+    """Raised when a source-record ID repeats within one manifest."""
+
+
+class RecordIdCollisionError(RecordConstructionError):
+    """Raised when deterministic record ID collision handling fails."""
+
+
+class SemanticColumnAccessError(RecordConstructionError):
+    """Raised when a mapped semantic source column cannot be read."""
+
+
+class TcgaParseError(SlideLineageError):
+    """Raised when TCGA parsing cannot proceed safely."""
+
+
+class MalformedTcgaIdentifierError(TcgaParseError):
+    """Raised when a TCGA-like identifier is malformed."""
