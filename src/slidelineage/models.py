@@ -103,6 +103,99 @@ class SourceManifest(ContractModel):
         return value
 
 
+class RawManifestRow(ContractModel):
+    """One decoded CSV data row before semantic schema mapping."""
+
+    source_manifest_id: str
+    source_row_number: int = Field(ge=0)
+    assigned_partition: Partition
+    raw_values: dict[str, str | None]
+    normalized_header_values: dict[str, str | None]
+
+    @field_validator("source_manifest_id")
+    @classmethod
+    def _manifest_id_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "source_manifest_id")
+
+    @field_validator("raw_values", "normalized_header_values")
+    @classmethod
+    def _mapping_keys_nonblank(
+        cls, value: dict[str, str | None]
+    ) -> dict[str, str | None]:
+        for key in value:
+            _nonblank(key, "manifest row mapping key")
+        return value
+
+
+class LoadedManifest(ContractModel):
+    """Loaded CSV manifest with source-byte and row-level provenance."""
+
+    source: SourceManifest
+    original_headers: tuple[str, ...]
+    normalized_headers: tuple[str, ...]
+    rows: tuple[RawManifestRow, ...]
+    encoding_used: str
+    newline_style: str | None
+    warnings: tuple[str, ...] = ()
+
+    @field_validator("original_headers", "normalized_headers")
+    @classmethod
+    def _headers_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for header in value:
+            _nonblank(header, "loaded manifest header")
+        return value
+
+    @field_validator("encoding_used")
+    @classmethod
+    def _encoding_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "encoding_used")
+
+    @field_validator("warnings")
+    @classmethod
+    def _loaded_warnings_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for warning in value:
+            _nonblank(warning, "loaded manifest warning")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_loaded_manifest(self) -> "LoadedManifest":
+        if len(self.original_headers) != len(self.normalized_headers):
+            raise ValueError("original and normalized header counts must match")
+        if len(self.rows) != self.source.row_count:
+            raise ValueError("source row_count must agree with loaded rows")
+        for row in self.rows:
+            if row.source_manifest_id != self.source.manifest_id:
+                raise ValueError("row source_manifest_id must agree with manifest")
+            if row.assigned_partition is not self.source.assigned_partition:
+                raise ValueError("row assigned_partition must agree with manifest")
+        return self
+
+
+class LoadedManifestPair(ContractModel):
+    """Typed container for train and test loaded manifests."""
+
+    train: LoadedManifest
+    test: LoadedManifest
+
+    @model_validator(mode="after")
+    def _validate_pair(self) -> "LoadedManifestPair":
+        if self.train.source.assigned_partition is not Partition.train:
+            raise ValueError("train manifest must be assigned to train")
+        if self.test.source.assigned_partition is not Partition.test:
+            raise ValueError("test manifest must be assigned to test")
+        if self.train.source.manifest_id == self.test.source.manifest_id:
+            raise ValueError("manifest IDs must differ")
+        try:
+            if self.train.source.path.samefile(self.test.source.path):
+                raise ValueError("train and test manifest files must be distinct")
+        except OSError:
+            if self.train.source.path.resolve() == self.test.source.path.resolve():
+                raise ValueError(
+                    "train and test manifest files must be distinct"
+                ) from None
+        return self
+
+
 class TcgaLineage(ContractModel):
     """Contract for TCGA lineage fields; parsing is intentionally out of scope."""
 

@@ -39,3 +39,14 @@ Repair outputs are proposals requiring researcher review. They should explain wh
 ## Non-clinical scope
 
 SlideLineage is limited to dataset provenance and partition validity. It must not make diagnosis, prognosis, treatment advice, biological interpretation, or clinical claims.
+
+
+## Manifest ingestion provenance
+
+Task 3 establishes the deterministic input boundary for two CSV manifests before any semantic schema mapping. Original source bytes are hashed with SHA-256 before decoding or parsing, so digests reflect byte-order marks and newline differences rather than reconstructed text. The loader retains original headers, canonical normalized headers, user-supplied source paths, assigned partitions, and zero-based data-row provenance for every loaded row.
+
+## Conservative normalization boundary
+
+Header normalization is deterministic and syntactic only: Unicode NFKC normalization, trimming, case folding, separator and punctuation conversion to underscores, underscore collapse, and empty-result rejection. It does not perform semantic aliasing or infer that different column names refer to patient, specimen, slide, institution, image, label, or record identifiers. Exact duplicate headers and distinct headers that collide after normalization are rejected instead of guessed or suffixed.
+
+Cell normalization at ingestion is intentionally minimal. Loaded row values preserve decoded raw strings, except truly absent trailing cells are represented as null. Normalized-header values apply NFKC, surrounding whitespace trimming, and approved missing-token conversion only. Arbitrary labels and paths are not casefolded, and identifier-like comparison normalization is available only as an explicit helper for later stages.
