@@ -10,14 +10,14 @@ Pathology datasets can contain related samples across partitions through shared 
 
 ## Milestone-one scope
 
-Milestone one now includes the repository foundation, typed domain models, deterministic configuration contracts, the default `SplitPolicy` profile, and deterministic CSV manifest ingestion contracts with source provenance. It does not implement schema mapping, record-ID generation, TCGA parsing, detectors, graph construction algorithms, policy evaluation execution, repair algorithms, reporting writers, demos, or AI integration.
+Milestone one now includes the repository foundation, typed domain models, deterministic configuration contracts, the default `SplitPolicy` profile, deterministic CSV manifest ingestion contracts with source provenance, and deterministic semantic schema mapping. Schema mapping includes explicit YAML/JSON maps, direct semantic-column overrides, per-field confidence/source metadata, ranked alternatives, unresolved ambiguity, and pair-level train/test consistency checks. It does not implement record-ID generation, TCGA parsing, overlap detection, image analysis, graph construction algorithms, policy evaluation execution, repair algorithms, reporting writers, an operational audit CLI, demos, or GPT integration.
 
 ## Standard audit workflow
 
 The planned workflow is:
 
 1. Load user-provided train and test manifests.
-2. Interpret schema mappings.
+2. Interpret schema mappings with deterministic rules or explicit user maps.
 3. Run deterministic factual relationship detectors.
 4. Build a relationship graph.
 5. Convert `FactualFinding` records into `EvaluatedFinding` records by evaluating them under a `SplitPolicy`.
@@ -58,8 +58,8 @@ Potential submission enhancements include polished HTML reports, reproducibility
 
 ## Deferred research capabilities
 
-Deferred capabilities include richer schema interpretation, broader institutional provenance modeling, advanced image similarity review queues, and optional GPT-5.6 assistance for redacted schema interpretation.
+Deferred capabilities include record-ID generation, TCGA parsing, overlap detection, broader institutional provenance modeling, advanced image similarity review queues, report writing, repair execution, an operational audit CLI, and optional GPT-5.6 assistance for redacted schema interpretation.
 
 ## Success criteria
 
-Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slidelineage --help` and `slidelineage --version`, and load two CSV manifests into deterministic typed ingestion contracts before later pipeline implementation begins. Task 3 does not make the detector or audit command operational.
+Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slidelineage --help` and `slidelineage --version`, and load two CSV manifests into deterministic typed ingestion contracts, and produce typed deterministic schema mappings before later pipeline implementation begins. Task 4 does not make record-ID generation, detectors, report writing, or the audit command operational.
