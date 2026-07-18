@@ -50,3 +50,21 @@ Task 3 establishes the deterministic input boundary for two CSV manifests before
 Header normalization is deterministic and syntactic only: Unicode NFKC normalization, trimming, case folding, separator and punctuation conversion to underscores, underscore collapse, and empty-result rejection. It does not perform semantic aliasing or infer that different column names refer to patient, specimen, slide, institution, image, label, or record identifiers. Exact duplicate headers and distinct headers that collide after normalization are rejected instead of guessed or suffixed.
 
 Cell normalization at ingestion is intentionally minimal. Loaded row values preserve decoded raw strings, except truly absent trailing cells are represented as null. Normalized-header values apply NFKC, surrounding whitespace trimming, and approved missing-token conversion only. Arbitrary labels and paths are not casefolded, and identifier-like comparison normalization is available only as an explicit helper for later stages.
+
+## Deterministic schema mapping
+
+Task 4 implements semantic schema mapping as a deterministic interpretation layer after ingestion and before overlap evidence. Supported semantic fields are exactly `image_path`, `patient_id`, `specimen_id`, `slide_id`, `institution_id`, `class_label`, `partition`, and `source_record_id`. Mapping precedence is direct user column overrides, explicit YAML/JSON schema maps, deterministic header/value scoring, then unresolved ambiguity.
+
+Schema mapping records per-field source, confidence, ranked alternatives, and validation messages. Header evidence remains primary, value evidence is limited to transparent signals such as image-like paths, split-like categories, cardinality, uniqueness, and repeated institution-like values, and contradictory strong headers remain dominant. Mapping results are not factual overlap findings and do not evaluate `SplitPolicy`.
+
+Record-ID generation, TCGA parsing, overlap detection, image analysis, graph construction, policy evaluation execution, repair execution, report writing, operational audit CLI behavior, and GPT integration remain pending.
+
+## Canonical records and TCGA lineage
+
+Task 5 constructs canonical records after schema mapping and before overlap detection. Record ID precedence is explicit mapped `source_record_id`, canonical row fingerprint, then canonical row fingerprint with a deterministic duplicate-occurrence suffix. Explicit source IDs are normalized conservatively for comparison and namespaced with the source manifest ID; duplicate explicit source IDs within one manifest are rejected, while the same source ID across train and test remains constructible for later detectors.
+
+Raw value digests are SHA-256 over canonical JSON containing original header names, decoded cell values, explicit nulls, and deterministic key ordering. Normalized value digests are SHA-256 over canonical JSON containing mapped semantic values and relevant TCGA-derived lineage values. Identical duplicate rows receive the same base fingerprint and then deterministic suffixes; source row number is retained as provenance and used only as a final duplicate-occurrence differentiator, not as scientific identity.
+
+TCGA parsing is strict, case-insensitive, full-string parsing for participant, sample, portion/analyte, and plate/center barcodes. Malformed TCGA-like values raise parse errors; a parse failure must not be treated as proof of unrelatedness. Derived TCGA patient/specimen identifiers are fallback candidates only. If direct and derived lineage values differ after conservative comparison, the direct value is retained in the canonical record, provenance is marked conflicted, both values are preserved in a `LineageConflict`, and future detectors must exclude that conflicted identifier unless explicitly resolved.
+
+A mapped partition column is metadata only. The CLI-assigned train/test partition remains authoritative; conflicting or validation-like partition-column values become deterministic warnings and never alter the assigned partition.

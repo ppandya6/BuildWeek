@@ -42,6 +42,18 @@ class SchemaMappingSource(StrEnum):
     unresolved = "unresolved"
 
 
+class IdentifierDerivationMethod(StrEnum):
+    direct_manifest_value = "direct_manifest_value"
+    tcga_derived = "tcga_derived"
+    unavailable = "unavailable"
+
+
+class IdentifierStatus(StrEnum):
+    accepted = "accepted"
+    conflicted = "conflicted"
+    unresolved = "unresolved"
+
+
 class RecordIdMethod(StrEnum):
     source_column = "source_column"
     canonical_row_fingerprint = "canonical_row_fingerprint"
@@ -281,6 +293,127 @@ class CanonicalRecord(ContractModel):
     @classmethod
     def _blank_optional_to_none(cls, value: object) -> object:
         return _blank_to_none(value)
+
+
+class IdentifierProvenance(ContractModel):
+    """Provenance for one direct or derived semantic identifier value."""
+
+    semantic_field: str
+    value: str | None = None
+    source_column: str | None = None
+    derivation_method: IdentifierDerivationMethod
+    parser_version: str | None = None
+    confidence: float = Field(ge=0, le=1)
+    status: IdentifierStatus
+
+    @field_validator("semantic_field")
+    @classmethod
+    def _semantic_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "semantic_field")
+
+    @field_validator("value", "source_column", "parser_version", mode="before")
+    @classmethod
+    def _optional_blank_to_none(cls, value: object) -> object:
+        return _blank_to_none(value)
+
+    @model_validator(mode="after")
+    def _status_value_consistency(self) -> "IdentifierProvenance":
+        if self.status is IdentifierStatus.accepted and self.value is None:
+            raise ValueError("accepted identifier provenance requires value")
+        if self.status is IdentifierStatus.unresolved and self.confidence != 0:
+            raise ValueError(
+                "unresolved identifier provenance requires zero confidence"
+            )
+        return self
+
+
+class LineageConflict(ContractModel):
+    """Direct-versus-derived lineage disagreement for researcher review."""
+
+    conflict_id: str
+    record_id: str
+    semantic_field: str
+    direct_value: str
+    derived_value: str
+    direct_source_column: str | None
+    parser_version: str
+    message: str
+
+    @field_validator(
+        "conflict_id",
+        "record_id",
+        "semantic_field",
+        "direct_value",
+        "derived_value",
+        "parser_version",
+        "message",
+    )
+    @classmethod
+    def _required_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "lineage conflict required field")
+
+    @field_validator("direct_source_column", mode="before")
+    @classmethod
+    def _source_blank_to_none(cls, value: object) -> object:
+        return _blank_to_none(value)
+
+    @model_validator(mode="after")
+    def _values_must_differ(self) -> "LineageConflict":
+        if self.direct_value.casefold() == self.derived_value.casefold():
+            raise ValueError("lineage conflict values must differ")
+        forbidden = {"diagnosis", "prognosis", "treatment", "clinical"}
+        if any(term in self.message.casefold() for term in forbidden):
+            raise ValueError("lineage conflict message must avoid clinical language")
+        return self
+
+
+class CanonicalManifestRecords(ContractModel):
+    """Canonical records and lineage metadata for one manifest."""
+
+    source_manifest_id: str
+    partition: Partition
+    records: tuple[CanonicalRecord, ...]
+    identifier_provenance: tuple[IdentifierProvenance, ...] = ()
+    conflicts: tuple[LineageConflict, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    @field_validator("source_manifest_id")
+    @classmethod
+    def _manifest_nonblank(cls, value: str) -> str:
+        return _nonblank(value, "source_manifest_id")
+
+    @field_validator("warnings")
+    @classmethod
+    def _warnings_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        for warning in value:
+            _nonblank(warning, "canonical record warning")
+        return value
+
+    @model_validator(mode="after")
+    def _records_match_manifest(self) -> "CanonicalManifestRecords":
+        for record in self.records:
+            if record.source_manifest_id != self.source_manifest_id:
+                raise ValueError("record source_manifest_id must match collection")
+            if record.assigned_partition is not self.partition:
+                raise ValueError("record partition must match collection")
+        return self
+
+
+class CanonicalRecordPair(ContractModel):
+    """Canonical train/test record collections."""
+
+    train: CanonicalManifestRecords
+    test: CanonicalManifestRecords
+
+    @model_validator(mode="after")
+    def _validate_pair(self) -> "CanonicalRecordPair":
+        if self.train.partition is not Partition.train:
+            raise ValueError("train records must have train partition")
+        if self.test.partition is not Partition.test:
+            raise ValueError("test records must have test partition")
+        if self.train.source_manifest_id == self.test.source_manifest_id:
+            raise ValueError("canonical manifest IDs must differ")
+        return self
 
 
 class SchemaFieldMapping(ContractModel):

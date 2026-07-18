@@ -74,3 +74,8 @@ Future Codex tasks must report:
 - Commands executed.
 - Exact command outcomes.
 - Remaining limitations.
+
+
+## Task 5 lineage detector constraints
+
+Future detectors must use only accepted, nonconflicted canonical identifiers for scientific relationship evidence. Preserve canonical record IDs and lineage conflict IDs in downstream provenance, and never treat TCGA parse failure as proof that records are unrelated. Keep direct manifest values and TCGA-derived evidence separate, including conflicted provenance, and never use source row number as a scientific identity; it is row provenance only.

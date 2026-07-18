@@ -51,3 +51,63 @@ class SameManifestFileError(ManifestError):
 
 class NormalizationError(ManifestError):
     """Raised when conservative normalization cannot produce a safe value."""
+
+
+class SchemaMappingError(SlideLineageError):
+    """Raised when semantic schema mapping cannot be completed safely."""
+
+
+class SchemaMapFileError(SchemaMappingError):
+    """Raised when an explicit schema-map file cannot be read or parsed."""
+
+
+class UnsupportedSchemaMapFormatError(SchemaMapFileError):
+    """Raised when a schema-map file extension is unsupported."""
+
+
+class InvalidSchemaMapError(SchemaMapFileError):
+    """Raised when a schema-map payload violates its contract."""
+
+
+class UnknownSchemaFieldError(InvalidSchemaMapError):
+    """Raised when a schema map names an unsupported semantic field."""
+
+
+class MissingMappedColumnError(SchemaMappingError):
+    """Raised when a mapped source column is absent or ambiguous."""
+
+
+class DuplicateSemanticAssignmentError(SchemaMappingError):
+    """Raised when one source column is assigned incompatible meanings."""
+
+
+class InsufficientSchemaCoverageError(SchemaMappingError):
+    """Raised when neither image_path nor source_record_id can be mapped."""
+
+
+class RecordConstructionError(SlideLineageError):
+    """Raised when canonical records cannot be constructed safely."""
+
+
+class MissingSourceRecordIdError(RecordConstructionError):
+    """Raised when a mapped source-record ID is missing for a row."""
+
+
+class DuplicateSourceRecordIdError(RecordConstructionError):
+    """Raised when a source-record ID repeats within one manifest."""
+
+
+class RecordIdCollisionError(RecordConstructionError):
+    """Raised when deterministic record ID collision handling fails."""
+
+
+class SemanticColumnAccessError(RecordConstructionError):
+    """Raised when a mapped semantic source column cannot be read."""
+
+
+class TcgaParseError(SlideLineageError):
+    """Raised when TCGA parsing cannot proceed safely."""
+
+
+class MalformedTcgaIdentifierError(TcgaParseError):
+    """Raised when a TCGA-like identifier is malformed."""
