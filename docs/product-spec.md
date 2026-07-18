@@ -10,7 +10,7 @@ Pathology datasets can contain related samples across partitions through shared 
 
 ## Milestone-one scope
 
-Milestone one now includes the repository foundation plus typed domain models, deterministic configuration contracts, and the default `SplitPolicy` profile. It does not implement ingestion, detectors, graph construction algorithms, policy evaluation execution, repair algorithms, reporting writers, demos, or AI integration.
+Milestone one now includes the repository foundation, typed domain models, deterministic configuration contracts, the default `SplitPolicy` profile, deterministic CSV manifest ingestion contracts with source provenance, conservative normalization, and deterministic semantic schema mapping with explicit YAML/JSON overrides. It does not implement record-ID generation, TCGA parsing, lineage conflict detection, detectors, graph construction algorithms, policy evaluation execution, repair algorithms, reporting writers, demos, operational audit CLI orchestration, or AI integration.
 
 ## Standard audit workflow
 
@@ -62,4 +62,4 @@ Deferred capabilities include richer schema interpretation, broader institutiona
 
 ## Success criteria
 
-Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, and invoke `slidelineage --help` and `slidelineage --version` before later pipeline implementation begins. Task 2 also requires validated typed contracts to serialize deterministically for later stages.
+Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slidelineage --help` and `slidelineage --version`, load two CSV manifests into deterministic typed ingestion contracts, and map manifest columns into typed schema interpretation results before later pipeline implementation begins. Task 4 does not make detectors, record construction, reports, or the audit command operational.

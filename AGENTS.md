@@ -14,6 +14,16 @@ Future implementation must:
 - Classify exact relationships separately from similarity candidates.
 - Avoid inferring patient, specimen, slide, or institution identity from perceptual similarity.
 - Preserve evidence provenance for every finding.
+- Preserve raw source provenance through ingestion and later transformations.
+- Avoid recomputing manifest digests from decoded text; source manifest digests must come from original bytes.
+- Avoid semantic interpretation in the ingestion layer.
+- Reject normalized header collisions rather than guessing or suffixing.
+- Retain zero-based data-row provenance for manifest rows and downstream records.
+- Preserve mapping provenance per semantic field.
+- Avoid treating inferred schema mappings as overlap evidence.
+- Preserve unresolved schema ambiguity rather than guessing.
+- Respect explicit schema mapping precedence.
+- Validate all future AI schema proposals through the same deterministic validator.
 - Label repair results as proposals requiring researcher review.
 - Avoid clinical claims.
 - Avoid invented benchmark results.
