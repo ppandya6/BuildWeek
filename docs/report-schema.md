@@ -30,3 +30,10 @@ The report schema is represented by provisional typed Pydantic contracts. The co
 ## Contract status
 
 The typed models prohibit arbitrary extra fields and use immutable tuples where practical. Serialization is deterministic when callers provide canonical ordering. Later stages may add report writers and typed model migrations, but they must preserve the factual-versus-evaluated finding distinction.
+
+
+## Ingestion provenance contracts
+
+Task 3 adds implemented intermediate contracts for deterministic CSV loading before schema mapping. `RawManifestRow` records each zero-based source data row with the source manifest ID, assigned partition, original-header-keyed raw values, and normalized-header-keyed minimally cleaned values. `LoadedManifest` records the `SourceManifest`, original header tuple, normalized header tuple, loaded rows, deterministic encoding label, newline-style metadata, and nonblank warnings such as short-row notices. `LoadedManifestPair` contains the assigned train and test manifests and validates distinct manifest IDs, train/test partition assignment, and distinct source files.
+
+These ingestion contracts are provenance inputs for later report models. They are not detector findings, do not include schema interpretation, do not generate canonical record IDs, and do not evaluate `SplitPolicy`.
