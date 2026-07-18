@@ -63,4 +63,4 @@ Deferred capabilities include overlap detection, image fingerprinting, broader i
 
 ## Success criteria
 
-Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slidelineage --help` and `slidelineage --version`, and load two CSV manifests into deterministic typed ingestion contracts, produce typed deterministic schema mappings, and construct canonical records with stable IDs and lineage conflict metadata before later detector implementation begins. Task 5 does not make overlap detectors, report writing, policy evaluation execution, or the audit command operational.
+Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slidelineage --help` and `slidelineage --version`, load two CSV manifests into deterministic typed ingestion contracts, produce typed deterministic schema mappings, and construct canonical records with stable IDs and lineage conflict metadata before later detector implementation begins. Task 5 does not make overlap detectors, report writing, policy evaluation execution, or the audit command operational.

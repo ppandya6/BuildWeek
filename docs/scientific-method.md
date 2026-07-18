@@ -57,7 +57,7 @@ Task 4 implements semantic schema mapping as a deterministic interpretation laye
 
 Schema mapping records per-field source, confidence, ranked alternatives, and validation messages. Header evidence remains primary, value evidence is limited to transparent signals such as image-like paths, split-like categories, cardinality, uniqueness, and repeated institution-like values, and contradictory strong headers remain dominant. Mapping results are not factual overlap findings and do not evaluate `SplitPolicy`.
 
-Record-ID generation, TCGA parsing, overlap detection, image analysis, graph construction, policy evaluation execution, repair execution, report writing, operational audit CLI behavior, and GPT integration remain pending.
+Overlap detection, image analysis, graph construction, policy evaluation execution, repair execution, report writing, operational audit CLI behavior, and GPT integration remain pending.
 
 ## Canonical records and TCGA lineage
 
