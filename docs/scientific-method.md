@@ -50,3 +50,11 @@ Task 3 establishes the deterministic input boundary for two CSV manifests before
 Header normalization is deterministic and syntactic only: Unicode NFKC normalization, trimming, case folding, separator and punctuation conversion to underscores, underscore collapse, and empty-result rejection. It does not perform semantic aliasing or infer that different column names refer to patient, specimen, slide, institution, image, label, or record identifiers. Exact duplicate headers and distinct headers that collide after normalization are rejected instead of guessed or suffixed.
 
 Cell normalization at ingestion is intentionally minimal. Loaded row values preserve decoded raw strings, except truly absent trailing cells are represented as null. Normalized-header values apply NFKC, surrounding whitespace trimming, and approved missing-token conversion only. Arbitrary labels and paths are not casefolded, and identifier-like comparison normalization is available only as an explicit helper for later stages.
+
+## Deterministic schema mapping
+
+Task 4 implements semantic schema mapping as a deterministic interpretation layer after ingestion and before overlap evidence. Supported semantic fields are exactly `image_path`, `patient_id`, `specimen_id`, `slide_id`, `institution_id`, `class_label`, `partition`, and `source_record_id`. Mapping precedence is direct user column overrides, explicit YAML/JSON schema maps, deterministic header/value scoring, then unresolved ambiguity.
+
+Schema mapping records per-field source, confidence, ranked alternatives, and validation messages. Header evidence remains primary, value evidence is limited to transparent signals such as image-like paths, split-like categories, cardinality, uniqueness, and repeated institution-like values, and contradictory strong headers remain dominant. Mapping results are not factual overlap findings and do not evaluate `SplitPolicy`.
+
+Record-ID generation, TCGA parsing, overlap detection, image analysis, graph construction, policy evaluation execution, repair execution, report writing, operational audit CLI behavior, and GPT integration remain pending.
