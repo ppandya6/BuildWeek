@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "slidelineage"
+version = "0.1.0"
+description = "Deterministic-first foundation for auditing computational-pathology partition lineage."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "SlideLineage contributors" }]
+dependencies = [
+  "typer>=0.12.0",
+  "pydantic>=2.0",
+  "pandas>=2.0",
+  "Pillow>=10.0",
+  "ImageHash>=4.3",
+  "networkx>=3.0",
+  "Jinja2>=3.1",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+ai = ["openai>=1.0"]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.5.0",
+  "mypy>=1.10",
+  "pandas-stubs>=2.0",
+  "types-PyYAML>=6.0",
+  "types-networkx>=3.0",
+]
+
+[project.scripts]
+slidelineage = "slidelineage.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slidelineage"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+strict = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["src"]
