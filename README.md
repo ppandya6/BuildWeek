@@ -4,7 +4,7 @@ SlideLineage is a local scientific developer tool planned to audit train/test pa
 
 ## Current implementation status
 
-The repository foundation, typed contract layer, deterministic CSV ingestion boundary, conservative normalization, deterministic schema mapping, and explicit YAML/JSON schema overrides exist. Packaging, documentation, developer tooling, CI, CLI help/version output, `AuditConfig`, the default `SplitPolicy`, typed domain/report contracts, source-byte SHA-256 manifest provenance, typed loaded-manifest contracts, and schema interpretation provenance are implemented. The audit pipeline arrives in later stages. Record-ID generation, TCGA parsing, lineage conflict detection, overlap detectors, image analysis, graph construction execution, policy evaluation execution, report generation, repair execution, demo generation, GPT integration, and the operational audit CLI remain pending.
+The repository foundation, typed contract layer, and deterministic CSV ingestion boundary exist: packaging, documentation, developer tooling, CI, CLI help/version output, `AuditConfig`, the default `SplitPolicy`, typed domain/report contracts, conservative normalization helpers, source-byte SHA-256 manifest provenance, and typed loaded-manifest contracts are implemented. The audit pipeline arrives in later stages. Schema mapping, record-ID generation, TCGA parsing, overlap detectors, graph construction execution, policy evaluation execution, report writers, repair execution, demo generation, and OpenAI API integration remain pending.
 
 ## Deterministic-first architecture
 

@@ -51,35 +51,3 @@ class SameManifestFileError(ManifestError):
 
 class NormalizationError(ManifestError):
     """Raised when conservative normalization cannot produce a safe value."""
-
-
-class SchemaMappingError(SlideLineageError):
-    """Raised when semantic schema mapping cannot be completed safely."""
-
-
-class SchemaMapFileError(SchemaMappingError):
-    """Raised when an explicit schema-map file cannot be read or parsed."""
-
-
-class UnsupportedSchemaMapFormatError(SchemaMapFileError):
-    """Raised when a schema-map file extension is unsupported."""
-
-
-class InvalidSchemaMapError(SchemaMapFileError):
-    """Raised when a schema-map file has invalid structure or values."""
-
-
-class UnknownSchemaFieldError(InvalidSchemaMapError):
-    """Raised when a schema-map file names an unsupported semantic field."""
-
-
-class MissingMappedColumnError(SchemaMappingError):
-    """Raised when a selected semantic mapping references no manifest column."""
-
-
-class DuplicateSemanticAssignmentError(SchemaMappingError):
-    """Raised when one source column is assigned to multiple semantic fields."""
-
-
-class RequiredSemanticCoverageError(SchemaMappingError):
-    """Raised when a manifest lacks the minimum mapped identifier coverage."""

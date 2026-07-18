@@ -50,14 +50,3 @@ Task 3 establishes the deterministic input boundary for two CSV manifests before
 Header normalization is deterministic and syntactic only: Unicode NFKC normalization, trimming, case folding, separator and punctuation conversion to underscores, underscore collapse, and empty-result rejection. It does not perform semantic aliasing or infer that different column names refer to patient, specimen, slide, institution, image, label, or record identifiers. Exact duplicate headers and distinct headers that collide after normalization are rejected instead of guessed or suffixed.
 
 Cell normalization at ingestion is intentionally minimal. Loaded row values preserve decoded raw strings, except truly absent trailing cells are represented as null. Normalized-header values apply NFKC, surrounding whitespace trimming, and approved missing-token conversion only. Arbitrary labels and paths are not casefolded, and identifier-like comparison normalization is available only as an explicit helper for later stages.
-
-
-## Deterministic schema interpretation
-
-Task 4 keeps schema interpretation separate from scientific evidence. Mapping results describe which source columns appear to represent semantic fields, but they are not overlap findings and must not be treated as patient, specimen, slide, institution, or file relationships.
-
-Mapping precedence is deterministic: direct `AuditConfig` semantic-column overrides are applied first, explicit YAML or JSON schema-map entries second, deterministic header/value scoring third, and unresolved ambiguity last. Explicit mappings receive confidence `1.0` only after validation against actual manifest columns; they are not trusted blindly.
-
-Deterministic scoring uses documented signals: exact canonical header matches, strong aliases, weak aliases, limited token-overlap support, and conservative value-pattern support for image-like paths, split-like partition values, categorical labels, unique record identifiers, repeated identifiers, and categorical institution values. The mapper does not inspect external files or databases.
-
-A deterministic mapping is accepted only when it meets the minimum confidence threshold and exceeds the next candidate by the configured ambiguity gap. Otherwise the semantic field remains unresolved with ranked alternatives and validation messages. This preserves ambiguity rather than selecting a column merely because it sorts first.

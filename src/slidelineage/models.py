@@ -1,7 +1,7 @@
 """Typed domain and serialization contracts for SlideLineage milestone one."""
 
 from datetime import datetime
-from enum import Enum, StrEnum
+from enum import StrEnum
 from pathlib import Path
 from typing import ClassVar, Literal, TypeAlias
 
@@ -33,17 +33,6 @@ class ConfirmationLevel(StrEnum):
     warning = "warning"
     ambiguous = "ambiguous"
     conflict = "conflict"
-
-
-class SemanticField(Enum):
-    image_path = "image_path"
-    patient_id = "patient_id"
-    specimen_id = "specimen_id"
-    slide_id = "slide_id"
-    institution_id = "institution_id"
-    class_label = "class_label"
-    partition = "partition"
-    source_record_id = "source_record_id"
 
 
 class SchemaMappingSource(StrEnum):
@@ -355,44 +344,6 @@ class SchemaMapping(ContractModel):
                 raise ValueError(
                     f"mapping {attribute!r} must have semantic_field {attribute!r}"
                 )
-        return self
-
-
-class ExplicitSchemaMap(ContractModel):
-    """Validated explicit semantic-to-source-column mapping from YAML or JSON."""
-
-    mappings: dict[SemanticField, str]
-    path: Path
-
-    @field_validator("mappings")
-    @classmethod
-    def _mapping_values_nonblank(
-        cls, value: dict[SemanticField, str]
-    ) -> dict[SemanticField, str]:
-        for column in value.values():
-            _nonblank(column, "explicit schema-map column")
-        return value
-
-
-class ManifestSchemaMappings(ContractModel):
-    """Pair-level schema interpretation result for train and test manifests."""
-
-    train: SchemaMapping
-    test: SchemaMapping
-    validation_messages: tuple[str, ...] = ()
-    has_mismatch: bool = False
-
-    @field_validator("validation_messages")
-    @classmethod
-    def _messages_nonblank(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        for message in value:
-            _nonblank(message, "schema mapping validation message")
-        return value
-
-    @model_validator(mode="after")
-    def _mismatch_requires_message(self) -> "ManifestSchemaMappings":
-        if self.has_mismatch and not self.validation_messages:
-            raise ValueError("mismatched schema mappings require validation messages")
         return self
 
 
