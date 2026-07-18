@@ -2,7 +2,7 @@
 
 ## Factual relationship versus policy violation
 
-A detector emits a factual relationship: an observed, provenance-backed relationship between records or files. A factual relationship becomes a confirmed disallowed overlap only after policy evaluation under an explicit `SplitPolicy`.
+A detector emits a `FactualFinding`: an observed, provenance-backed factual relationship between records or files without a policy result. A factual relationship becomes an `EvaluatedFinding` and may be called a confirmed disallowed overlap only after policy evaluation under an explicit `SplitPolicy`.
 
 ## Confirmed identifier relationships
 

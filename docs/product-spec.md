@@ -10,17 +10,17 @@ Pathology datasets can contain related samples across partitions through shared 
 
 ## Milestone-one scope
 
-Milestone one establishes the repository foundation only: metadata, packaging, documentation, tooling, CI, CLI help/version output, and foundation tests. It does not implement ingestion, detectors, graph construction, policy evaluation, repair, reporting, demos, or AI integration.
+Milestone one now includes the repository foundation plus typed domain models, deterministic configuration contracts, and the default `SplitPolicy` profile. It does not implement ingestion, detectors, graph construction algorithms, policy evaluation execution, repair algorithms, reporting writers, demos, or AI integration.
 
 ## Standard audit workflow
 
 The planned workflow is:
 
-1. Load user-provided manifests.
+1. Load user-provided train and test manifests.
 2. Interpret schema mappings.
 3. Run deterministic factual relationship detectors.
 4. Build a relationship graph.
-5. Evaluate factual relationships under a `SplitPolicy`.
+5. Convert `FactualFinding` records into `EvaluatedFinding` records by evaluating them under a `SplitPolicy`.
 6. Emit machine-readable and human-readable reports.
 
 ## Optional repair workflow
@@ -62,4 +62,4 @@ Deferred capabilities include richer schema interpretation, broader institutiona
 
 ## Success criteria
 
-Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, and invoke `slidelineage --help` and `slidelineage --version` before later pipeline implementation begins.
+Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, and invoke `slidelineage --help` and `slidelineage --version` before later pipeline implementation begins. Task 2 also requires validated typed contracts to serialize deterministically for later stages.

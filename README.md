@@ -4,14 +4,14 @@ SlideLineage is a local scientific developer tool planned to audit train/test pa
 
 ## Current implementation status
 
-Task 1 establishes the repository foundation: packaging, documentation, developer tooling, CI, a package entry point, and CLI help/version output. The audit pipeline arrives in later stages. No detector, manifest ingestion command, schema mapping, graph construction, policy evaluation, repair workflow, report generator, demo generator, or OpenAI API integration is implemented yet.
+The repository foundation and typed contract layer exist: packaging, documentation, developer tooling, CI, CLI help/version output, `AuditConfig`, the default `SplitPolicy`, and typed domain/report contracts are implemented. The audit pipeline arrives in later stages. Manifest ingestion, schema inference, detectors, graph construction execution, policy evaluation execution, repair execution, report writers, demo generation, and OpenAI API integration remain pending.
 
 ## Deterministic-first architecture
 
 The planned architecture separates:
 
-1. Deterministic factual relationship detection.
-2. Evaluation under an explicit `SplitPolicy`.
+1. Deterministic factual relationship detection into `FactualFinding` records.
+2. Evaluation under an explicit `SplitPolicy` into `EvaluatedFinding` records.
 3. Optional repair proposals requiring researcher review.
 4. Optional GPT-5.6 schema interpretation, with deterministic scientific evidence remaining authoritative.
 
@@ -20,10 +20,14 @@ The planned architecture separates:
 A later milestone is expected to introduce an audit command similar to:
 
 ```bash
-slidelineage audit --manifest dataset.csv --policy patient_independent_pathology_benchmark --out reports/
+slidelineage audit \
+  --train examples/demo/train_manifest.csv \
+  --test examples/demo/test_manifest.csv \
+  --images examples/demo/images \
+  --output artifacts/demo-audit
 ```
 
-This command is not available in Task 1.
+This planned two-manifest command is not available at the current stage.
 
 ## Development installation
 
@@ -69,6 +73,8 @@ Later reporting stages plan to produce:
 - `report.html`
 - `findings.csv`
 - `repair_proposal.csv`, only when repair proposal generation is requested
+
+Task 2 implements typed report contracts only; report writer execution remains pending.
 
 ## Privacy and scope
 

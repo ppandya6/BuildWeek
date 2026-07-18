@@ -10,7 +10,7 @@ Milestone one concerns data provenance and partition validity. It excludes diagn
 
 Future implementation must:
 
-- Separate factual detector output from `SplitPolicy` evaluation.
+- Separate factual detector output from `SplitPolicy` evaluation. Detector-stage contracts use `FactualFinding`; policy-evaluated contracts use `EvaluatedFinding` with an explicit `PolicyOutcome` and reason.
 - Classify exact relationships separately from similarity candidates.
 - Avoid inferring patient, specimen, slide, or institution identity from perceptual similarity.
 - Preserve evidence provenance for every finding.
