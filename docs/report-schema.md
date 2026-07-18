@@ -1,6 +1,6 @@
 # Typed Report Contracts
 
-The report schema is now represented by provisional typed Pydantic contracts. The contracts define serialization semantics for later stages, but no report writer or audit pipeline is operational yet.
+The report schema is represented by provisional typed Pydantic contracts. The contracts define serialization semantics for later stages, but no report writer or audit pipeline is operational yet.
 
 ## Planned output files
 

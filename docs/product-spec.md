@@ -16,7 +16,7 @@ Milestone one now includes the repository foundation plus typed domain models, d
 
 The planned workflow is:
 
-1. Load user-provided manifests.
+1. Load user-provided train and test manifests.
 2. Interpret schema mappings.
 3. Run deterministic factual relationship detectors.
 4. Build a relationship graph.
@@ -62,4 +62,4 @@ Deferred capabilities include richer schema interpretation, broader institutiona
 
 ## Success criteria
 
-Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, and invoke `slidelineage --help` and `slidelineage --version` before later pipeline implementation begins.
+Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, and invoke `slidelineage --help` and `slidelineage --version` before later pipeline implementation begins. Task 2 also requires validated typed contracts to serialize deterministically for later stages.
