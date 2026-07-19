@@ -10,6 +10,24 @@ from slidelineage.models import AuditReport
 runner = CliRunner()
 
 
+def _write_ai_fixture(
+    path: Path,
+    *,
+    image_header: str = "img",
+    image_value: str,
+    label_header: str = "unknown_code",
+    record_header: str = "rid",
+    record_value: str,
+    patient_value: str,
+) -> None:
+    path.write_text(
+        f"{image_header},patient,specimen,slide,site,{label_header},{record_header}\n"
+        f"{image_value},{patient_value},S{record_value},L{record_value},I,A,"
+        f"{record_value}\n",
+        encoding="utf-8",
+    )
+
+
 def _args(tmp_path: Path, same_patient: bool = False) -> list[str]:
     train = audit_manifest(tmp_path / "train.csv", "P1", "R1")
     test = audit_manifest(tmp_path / "test.csv", "P1" if same_patient else "P2", "R2")
@@ -100,20 +118,29 @@ def test_cli_ai_missing_optional_sdk_has_no_traceback(
 
     monkeypatch.setattr("slidelineage.ai_schema.import_module", missing_sdk)
     args = _args(tmp_path)
-    for manifest_name in ("train.csv", "test.csv"):
-        manifest = tmp_path / manifest_name
-        manifest.write_text(
-            manifest.read_text(encoding="utf-8").replace("label", "unknown_code"),
-            encoding="utf-8",
-        )
+    _write_ai_fixture(
+        tmp_path / "train.csv",
+        image_value="R1.png",
+        record_value="R1",
+        patient_value="P1",
+    )
+    _write_ai_fixture(
+        tmp_path / "test.csv",
+        image_value="R2.png",
+        record_value="R2",
+        patient_value="P2",
+    )
     label_option = args.index("--label-column")
     del args[label_option : label_option + 2]
     result = runner.invoke(app, args + ["--ai-schema-map"])
     assert result.exit_code == 0
     assert "Traceback" not in result.output
+    assert (tmp_path / "out" / "report.html").is_file()
+    assert (tmp_path / "out" / "findings.csv").is_file()
     report = AuditReport.model_validate_json(
         (tmp_path / "out" / "report.json").read_text(encoding="utf-8")
     )
+    assert report.ai_schema_assistance.proposal_requested is True
     assert any(
         "AI support requires" in warning
         for warning in report.ai_schema_assistance.warnings
@@ -128,19 +155,24 @@ def test_cli_ai_missing_optional_sdk_fails_without_minimum_coverage(
 
     monkeypatch.setattr("slidelineage.ai_schema.import_module", missing_sdk)
     args = _args(tmp_path)
-    for manifest_name in ("train.csv", "test.csv"):
-        manifest = tmp_path / manifest_name
-        header, row = manifest.read_text(encoding="utf-8").splitlines()
-        columns = row.split(",")
-        columns[0] = ""
-        columns[-1] = ""
-        manifest.write_text(
-            header.replace("img", "unknown_path").replace("rid", "unknown_record")
-            + "\n"
-            + ",".join(columns)
-            + "\n",
-            encoding="utf-8",
-        )
+    _write_ai_fixture(
+        tmp_path / "train.csv",
+        image_header="unknown_path",
+        image_value="",
+        label_header="label",
+        record_header="unknown_record",
+        record_value="",
+        patient_value="P1",
+    )
+    _write_ai_fixture(
+        tmp_path / "test.csv",
+        image_header="unknown_path",
+        image_value="",
+        label_header="label",
+        record_header="unknown_record",
+        record_value="",
+        patient_value="P2",
+    )
     for option in ("--image-column", "--record-id-column"):
         option_index = args.index(option)
         del args[option_index : option_index + 2]
@@ -149,3 +181,5 @@ def test_cli_ai_missing_optional_sdk_fails_without_minimum_coverage(
     assert 'python -m pip install -e ".[ai]"' in result.output
     assert "Traceback" not in result.output
     assert not (tmp_path / "out" / "report.json").exists()
+    assert not (tmp_path / "out" / "report.html").exists()
+    assert not (tmp_path / "out" / "findings.csv").exists()
