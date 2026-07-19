@@ -1,4 +1,6 @@
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -130,7 +132,71 @@ def test_current_pypi_action_pin_preserves_trusted_publishing_defaults():
         for step in publish["steps"]
         if "pypa/gh-action-pypi-publish@" in step.get("uses", "")
     )
-    assert action_step["with"] == {"packages-dir": "dist/"}
+    assert action_step["with"] == {"packages-dir": "publish-dist/"}
     assert "verify-metadata" not in action_step["with"]
     assert "verify_metadata" not in action_step["with"]
     assert not {"user", "username", "password", "token"} & action_step["with"].keys()
+
+
+def test_publish_directory_is_isolated_without_changing_release_artifacts():
+    jobs = workflow()["jobs"]
+    publish_steps = str(jobs["publish"]["steps"])
+    release_steps = str(jobs["github-prerelease"]["steps"])
+
+    assert "prepare_publication.py dist publish-dist" in publish_steps
+    assert "prepare_publication.py --check publish-dist" in publish_steps
+    attestation = next(
+        step
+        for step in jobs["publish"]["steps"]
+        if "actions/attest-build-provenance@" in step.get("uses", "")
+    )
+    assert attestation["with"]["subject-path"].splitlines() == [
+        "dist/*.whl",
+        "dist/*.tar.gz",
+    ]
+    assert (
+        "dist/SHA256SUMS"
+        not in publish_steps.split("Prepare isolated PyPI publication directory", 1)[1]
+    )
+    assert "dist/*.whl dist/*.tar.gz dist/SHA256SUMS" in release_steps
+
+
+def test_prepare_publication_directory_copies_only_distributions(tmp_path):
+    source = tmp_path / "dist"
+    destination = tmp_path / "publish-dist"
+    source.mkdir()
+    (source / "package.whl").write_bytes(b"wheel")
+    (source / "package.tar.gz").write_bytes(b"sdist")
+    (source / "SHA256SUMS").write_text("checksums", encoding="utf-8")
+
+    subprocess.run(
+        [sys.executable, ROOT / "scripts/prepare_publication.py", source, destination],
+        check=True,
+    )
+
+    assert sorted(path.name for path in destination.iterdir()) == [
+        "package.tar.gz",
+        "package.whl",
+    ]
+    assert (source / "SHA256SUMS").read_text(encoding="utf-8") == "checksums"
+
+
+def test_publication_directory_guard_rejects_extra_file(tmp_path):
+    publication = tmp_path / "publish-dist"
+    publication.mkdir()
+    (publication / "package.whl").touch()
+    (publication / "package.tar.gz").touch()
+    (publication / "SHA256SUMS").touch()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            ROOT / "scripts/prepare_publication.py",
+            "--check",
+            publication,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "unexpected publication files: SHA256SUMS" in result.stderr
