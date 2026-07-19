@@ -7,7 +7,7 @@ import json
 import re
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Final
+from typing import Final, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -61,6 +61,29 @@ _SPLITS = {"train", "training", "test", "testing", "val", "valid", "validation"}
 class _ProviderProposal(BaseModel):
     model_config = ConfigDict(extra="forbid")
     proposed_fields: tuple[AiProposedFieldMapping, ...]
+
+
+class _StructuredResponse(Protocol):
+    """Minimal structured-response surface consumed from the provider SDK."""
+
+    id: str | None
+    output_parsed: object
+
+
+class _ResponsesClient(Protocol):
+    def parse(
+        self,
+        *,
+        model: str,
+        input: list[dict[str, str]],
+        text_format: type[BaseModel],
+        timeout: float,
+    ) -> _StructuredResponse: ...
+
+
+class _OpenAIClient(Protocol):
+    @property
+    def responses(self) -> _ResponsesClient: ...
 
 
 def canonical_request_json(request: AiSchemaRequest) -> str:
@@ -162,7 +185,7 @@ def request_ai_schema_proposal(
     request: AiSchemaRequest,
     config: AuditConfig,
     *,
-    client: object | None = None,
+    client: _OpenAIClient | None = None,
 ) -> AiSchemaProposal:
     """Request one non-streaming structured proposal through the OpenAI SDK."""
 
@@ -174,12 +197,16 @@ def request_ai_schema_proposal(
                 'AI support requires: python -m pip install -e ".[ai]"'
             ) from exc
         try:
-            client = OpenAI(timeout=config.ai_request_timeout_seconds, max_retries=0)
+            # The SDK's generic response types are wider than the small surface used
+            # here; keep that external boundary explicit and typed internally.
+            client = cast(
+                _OpenAIClient,
+                OpenAI(timeout=config.ai_request_timeout_seconds, max_retries=0),
+            )
         except Exception as exc:
             raise AiCredentialError("OpenAI credentials are unavailable") from exc
     try:
-        typed_client: Any = client
-        responses = typed_client.responses
+        responses = client.responses
         response = responses.parse(
             model=config.ai_model,
             input=[

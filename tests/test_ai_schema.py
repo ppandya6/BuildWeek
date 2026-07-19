@@ -5,8 +5,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from pydantic import BaseModel
 
 from slidelineage.ai_schema import (
+    _OpenAIClient,
     ai_request_digest,
     apply_validated_ai_schema_proposal,
     build_ai_schema_request,
@@ -64,6 +66,34 @@ def _proposal(request_digest: str, *fields: AiProposedFieldMapping) -> AiSchemaP
     )
 
 
+class _FakeStructuredResponse:
+    def __init__(self, parsed: object) -> None:
+        self.id: str | None = "resp-1"
+        self.output_parsed = parsed
+
+
+class _FakeResponses:
+    def __init__(self, parsed: object) -> None:
+        self.parsed = parsed
+        self.calls = 0
+
+    def parse(
+        self,
+        *,
+        model: str,
+        input: list[dict[str, str]],
+        text_format: type[BaseModel],
+        timeout: float,
+    ) -> _FakeStructuredResponse:
+        self.calls += 1
+        return _FakeStructuredResponse(self.parsed)
+
+
+class _FakeClient:
+    def __init__(self, parsed: object) -> None:
+        self.responses = _FakeResponses(parsed)
+
+
 def test_request_summary_is_aggregate_only_and_stable(tmp_path: Path) -> None:
     pair, config = _pair(tmp_path)
     mappings = map_manifest_pair(pair, config)
@@ -99,15 +129,50 @@ def test_fake_structured_client_returns_proposal_without_raw_response(
             }
         ]
     }
-    fake = SimpleNamespace(
-        responses=SimpleNamespace(
-            parse=lambda **_: SimpleNamespace(id="resp-1", output_parsed=parsed)
-        )
-    )
+    fake: _OpenAIClient = _FakeClient(parsed)
     proposal = request_ai_schema_proposal(request, config, client=fake)
     assert proposal.response_id == "resp-1"
     assert proposal.proposed_fields[0].test_source_column == "Case Key"
     assert "output_parsed" not in proposal.model_dump_json()
+
+
+def test_none_client_constructs_sdk_client_without_network(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import openai
+
+    pair, config = _pair(tmp_path)
+    request = build_ai_schema_request(
+        pair.train, pair.test, map_manifest_pair(pair, config), config
+    )
+    parsed = {
+        "proposed_fields": [
+            {
+                "semantic_field": "patient_id",
+                "train_source_column": "Subject Code",
+                "test_source_column": "Case Key",
+                "confidence": 0.91,
+                "rationale_code": "cross_manifest_header_alignment",
+                "requires_review": True,
+            }
+        ]
+    }
+    fake = _FakeClient(parsed)
+    constructor_calls: list[dict[str, object]] = []
+
+    def fake_openai(**kwargs: object) -> _FakeClient:
+        constructor_calls.append(kwargs)
+        return fake
+
+    monkeypatch.setattr(openai, "OpenAI", fake_openai)
+    proposal = request_ai_schema_proposal(request, config, client=None)
+
+    assert constructor_calls == [
+        {"timeout": config.ai_request_timeout_seconds, "max_retries": 0}
+    ]
+    assert fake.responses.calls == 1
+    assert proposal.response_id == "resp-1"
+    assert proposal.proposed_fields[0].test_source_column == "Case Key"
 
 
 @pytest.mark.parametrize("result", [None, {}, {"proposed_fields": []}])
