@@ -137,3 +137,9 @@ Never publish without explicit approval. Validate built artifacts in clean
 environments, keep OpenAI optional, and never place credentials in release
 workflows. Preserve runtime/metadata version consistency, inspect source and wheel
 contents, and never describe an audit as contamination-free certification.
+Never create tags automatically during ordinary tasks, use PyPI API tokens, or
+publish before an explicitly approved protected-environment deployment. Require a
+green dry run and exact runtime/metadata/tag/changelog agreement. Build artifacts
+once and reuse those exact files for validation, attestation, publication, and the
+GitHub release. Never upload secrets or raw datasets, and never turn an audit into
+a scientific certification claim.

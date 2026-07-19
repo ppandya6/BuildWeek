@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
 import os
 import shutil
@@ -134,9 +135,17 @@ def smoke(artifact: Path, *, ai: bool = False) -> str:
 
 
 def main() -> int:
-    shutil.rmtree(ROOT / "dist", ignore_errors=True)
-    shutil.rmtree(ROOT / "build", ignore_errors=True)
-    run([sys.executable, "-m", "build"])
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--artifacts-only",
+        action="store_true",
+        help="validate existing dist artifacts without rebuilding",
+    )
+    args = parser.parse_args()
+    if not args.artifacts_only:
+        shutil.rmtree(ROOT / "dist", ignore_errors=True)
+        shutil.rmtree(ROOT / "build", ignore_errors=True)
+        run([sys.executable, "-m", "build"])
     artifacts = sorted((ROOT / "dist").iterdir())
     wheels = [p for p in artifacts if p.suffix == ".whl"]
     sdists = [p for p in artifacts if p.name.endswith(".tar.gz")]

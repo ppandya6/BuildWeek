@@ -40,6 +40,11 @@ syntax.
 
 ## Installation
 
+Release status: `0.1.0a1` is a release candidate and PEP 440 prerelease. It is not
+claimed to be on PyPI. Installation from this source checkout or a reviewed built
+wheel remains supported; the PyPI command below applies only after a separately
+approved, verified publication.
+
 ### From a future PyPI release
 
 The project has **not** been published to PyPI. After a separately approved

@@ -1,0 +1,208 @@
+name: Guarded package publication
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact PEP 440 version to validate
+        required: true
+        default: "0.1.0a1"
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  ARTIFACT_NAME: slide-of-life-release-candidate
+
+jobs:
+  preflight:
+    name: 1. Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      dry-run: ${{ steps.version.outputs.dry-run }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install constrained release tools
+        run: python -m pip install ".[dev]"
+      - name: Resolve immutable release inputs
+        id: version
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="$MANUAL_VERSION"
+            dry_run=true
+            python scripts/validate_release_ref.py --version "$version" --dry-run
+          else
+            version="${REF_NAME#v}"
+            dry_run=false
+            python scripts/validate_release_ref.py --version "$version" --ref "$REF_NAME"
+          fi
+          prerelease=$(python -c "from packaging.version import Version; print(str(Version('$version').is_prerelease).lower())")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dry-run=$dry_run" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+      - name: Run deterministic gates
+        run: |
+          ruff format --check .
+          ruff check .
+          mypy src
+          python scripts/validate_skill.py
+          pytest -q
+
+  build:
+    name: 2. Build once
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: python -m pip install ".[dev]"
+      - name: Build distributions exactly once
+        run: python -m build
+      - name: Check package metadata
+        run: python -m twine check dist/*
+      - name: Validate exact distributions without rebuilding
+        run: python scripts/validate_distribution.py --artifacts-only
+      - name: Generate SHA-256 checksums
+        run: python scripts/generate_checksums.py dist
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist/
+          if-no-files-found: error
+
+  validate:
+    name: 3. Validate uploaded artifacts
+    needs: [preflight, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: python -m pip install ".[dev]"
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist
+      - run: python -m twine check dist/*.whl dist/*.tar.gz
+      - run: python scripts/validate_distribution.py --artifacts-only
+      - run: python scripts/generate_checksums.py dist
+      - name: Extract checked-in release notes
+        run: python scripts/extract_release_notes.py "${{ needs.preflight.outputs.version }}" --output release-notes.md
+      - name: Dry-run isolated install verification
+        if: needs.preflight.outputs.dry-run == 'true'
+        run: python scripts/validate_distribution.py --artifacts-only
+      - name: Dry-run summary
+        if: needs.preflight.outputs.dry-run == 'true'
+        run: |
+          echo '### DRY RUN: NOTHING WAS PUBLISHED' >> "$GITHUB_STEP_SUMMARY"
+
+  approval:
+    name: 4-5. Attestation readiness and approval gate
+    needs: [preflight, validate]
+    if: needs.preflight.outputs.dry-run == 'false' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Publication requires approval in the protected pypi environment."
+
+  publish:
+    name: 6. Attest and publish exact artifacts to PyPI
+    needs: [preflight, build, validate, approval]
+    if: needs.preflight.outputs.dry-run == 'false' && github.event_name == 'push' && github.ref == format('refs/tags/v{0}', needs.preflight.outputs.version)
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/slide-of-life/${{ needs.preflight.outputs.version }}/
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist
+      - name: 4. Attest wheel and source distribution
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
+      - name: Publish with PyPI Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # v1.9.0
+        with:
+          packages-dir: dist/
+
+  verify-published:
+    name: 7. Verify clean PyPI installation
+    needs: [preflight, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install published package in a clean environment
+        run: |
+          python -m venv verify-env
+          verify-env/bin/python -m pip install "slide-of-life==${{ needs.preflight.outputs.version }}"
+          verify-env/bin/python -c "import importlib.metadata,pathlib,slidelineage; assert importlib.metadata.version('slide-of-life') == '${{ needs.preflight.outputs.version }}'; assert pathlib.Path(slidelineage.__file__).resolve().is_relative_to(pathlib.Path('verify-env').resolve())"
+          verify-env/bin/slide-of-life --help
+          verify-env/bin/slide-of-life --version
+          verify-env/bin/python scripts/generate_demo.py --output verify-demo --force
+          verify-env/bin/slide-of-life audit --train verify-demo/train_manifest.csv --test verify-demo/test_manifest.csv --images verify-demo/images --schema-map examples/demo/schema-map.yaml --output verify-audit --force || test $? -eq 2
+          test -f verify-audit/report.json
+          test -f verify-audit/report.html
+          test -f verify-audit/findings.csv
+
+  github-prerelease:
+    name: 8. Create GitHub release after verification
+    needs: [preflight, build, verify-published]
+    if: needs.preflight.outputs.dry-run == 'false' && github.event_name == 'push' && github.ref == format('refs/tags/v{0}', needs.preflight.outputs.version)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist
+      - run: python scripts/extract_release_notes.py "${{ needs.preflight.outputs.version }}" --output release-notes.md
+      - name: Create reviewed GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${{ github.ref_name }}"
+          dist/*.whl dist/*.tar.gz dist/SHA256SUMS
+          --title "Slide-of-Life ${{ needs.preflight.outputs.version }}"
+          --notes-file release-notes.md
+          ${{ needs.preflight.outputs.prerelease == 'true' && '--prerelease' || '--latest=false' }}
