@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from conftest import audit_manifest
@@ -88,3 +89,26 @@ def test_cli_ai_help_and_acceptance_requires_enablement(tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "requires ai_schema_map" in result.output
     assert "Traceback" not in result.output
+
+
+def test_cli_ai_missing_optional_sdk_has_no_traceback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def missing_sdk(name: str) -> object:
+        raise ModuleNotFoundError(name)
+
+    monkeypatch.setattr("slidelineage.ai_schema.import_module", missing_sdk)
+    args = _args(tmp_path)
+    for manifest_name in ("train.csv", "test.csv"):
+        manifest = tmp_path / manifest_name
+        manifest.write_text(
+            manifest.read_text(encoding="utf-8").replace("patient", "unknown_code"),
+            encoding="utf-8",
+        )
+    patient_option = args.index("--patient-column")
+    del args[patient_option : patient_option + 2]
+    result = runner.invoke(app, args + ["--ai-schema-map"])
+    assert result.exit_code == 0
+    assert "Traceback" not in result.output
+    report = (tmp_path / "out" / "report.json").read_text(encoding="utf-8")
+    assert "AI support requires" in report

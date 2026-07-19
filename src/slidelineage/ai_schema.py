@@ -7,6 +7,7 @@ import json
 import re
 from collections.abc import Callable
 from datetime import UTC, datetime
+from importlib import import_module
 from typing import Final, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -84,6 +85,28 @@ class _ResponsesClient(Protocol):
 class _OpenAIClient(Protocol):
     @property
     def responses(self) -> _ResponsesClient: ...
+
+
+def _create_openai_client(config: AuditConfig) -> _OpenAIClient:
+    """Construct the optional provider client without a static SDK import."""
+
+    try:
+        openai_module = import_module("openai")
+    except ModuleNotFoundError as exc:
+        raise AiSdkUnavailableError(
+            'AI support requires: python -m pip install -e ".[ai]"'
+        ) from exc
+    try:
+        constructor = openai_module.OpenAI
+        sdk_client = constructor(
+            timeout=config.ai_request_timeout_seconds,
+            max_retries=0,
+        )
+    except Exception as exc:
+        raise AiCredentialError("OpenAI credentials are unavailable") from exc
+    # The dynamically loaded SDK is untyped here. Limit the cast to this external
+    # boundary so the rest of the module retains its narrow, provider-free protocol.
+    return cast(_OpenAIClient, sdk_client)
 
 
 def canonical_request_json(request: AiSchemaRequest) -> str:
@@ -190,21 +213,7 @@ def request_ai_schema_proposal(
     """Request one non-streaming structured proposal through the OpenAI SDK."""
 
     if client is None:
-        try:
-            from openai import OpenAI
-        except ImportError as exc:
-            raise AiSdkUnavailableError(
-                'AI support requires: python -m pip install -e ".[ai]"'
-            ) from exc
-        try:
-            # The SDK's generic response types are wider than the small surface used
-            # here; keep that external boundary explicit and typed internally.
-            client = cast(
-                _OpenAIClient,
-                OpenAI(timeout=config.ai_request_timeout_seconds, max_retries=0),
-            )
-        except Exception as exc:
-            raise AiCredentialError("OpenAI credentials are unavailable") from exc
+        client = _create_openai_client(config)
     try:
         responses = client.responses
         response = responses.parse(

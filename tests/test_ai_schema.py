@@ -17,7 +17,11 @@ from slidelineage.ai_schema import (
     validate_ai_schema_proposal,
 )
 from slidelineage.config import AuditConfig
-from slidelineage.errors import AiRequestError, AiResponseValidationError
+from slidelineage.errors import (
+    AiRequestError,
+    AiResponseValidationError,
+    AiSdkUnavailableError,
+)
 from slidelineage.ingest import load_manifest
 from slidelineage.models import (
     AiProposedFieldMapping,
@@ -139,8 +143,6 @@ def test_fake_structured_client_returns_proposal_without_raw_response(
 def test_none_client_constructs_sdk_client_without_network(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import openai
-
     pair, config = _pair(tmp_path)
     request = build_ai_schema_request(
         pair.train, pair.test, map_manifest_pair(pair, config), config
@@ -164,7 +166,10 @@ def test_none_client_constructs_sdk_client_without_network(
         constructor_calls.append(kwargs)
         return fake
 
-    monkeypatch.setattr(openai, "OpenAI", fake_openai)
+    fake_module = SimpleNamespace(OpenAI=fake_openai)
+    monkeypatch.setattr(
+        "slidelineage.ai_schema.import_module", lambda name: fake_module
+    )
     proposal = request_ai_schema_proposal(request, config, client=None)
 
     assert constructor_calls == [
@@ -173,6 +178,22 @@ def test_none_client_constructs_sdk_client_without_network(
     assert fake.responses.calls == 1
     assert proposal.response_id == "resp-1"
     assert proposal.proposed_fields[0].test_source_column == "Case Key"
+
+
+def test_none_client_reports_unavailable_optional_sdk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pair, config = _pair(tmp_path)
+    request = build_ai_schema_request(
+        pair.train, pair.test, map_manifest_pair(pair, config), config
+    )
+
+    def missing_sdk(name: str) -> object:
+        raise ModuleNotFoundError(name)
+
+    monkeypatch.setattr("slidelineage.ai_schema.import_module", missing_sdk)
+    with pytest.raises(AiSdkUnavailableError, match="pip install"):
+        request_ai_schema_proposal(request, config)
 
 
 @pytest.mark.parametrize("result", [None, {}, {"proposed_fields": []}])
