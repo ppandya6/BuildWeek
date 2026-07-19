@@ -121,3 +121,12 @@ Never log API keys or persist pasted keys. Never prompt in CI, and never open a 
 without confirmation; only the official OpenAI API-key and quickstart URLs may be
 used for onboarding. Test every interactive branch through injected functions and
 keep deterministic no-AI mode functional.
+
+
+## Task 12 Agent Skill constraints
+
+The skill must wrap the existing CLI rather than duplicate the audit engine, must
+not fabricate findings, and must preserve factual detection, policy evaluation,
+and repair-proposal separation. Protect secrets and source data, keep examples
+synthetic, keep skill references synchronized with CLI behavior, and keep skill
+validation network-free.

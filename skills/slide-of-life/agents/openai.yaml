@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slide-of-Life Dataset Audit"
+  short_description: "Audit train/test partition relationships safely"
+  default_prompt: "Use $slide-of-life to audit these train and test manifests and explain facts separately from policy outcomes."

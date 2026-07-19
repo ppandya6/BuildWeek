@@ -78,6 +78,24 @@ slide-of-life audit \
   --accept-validated-ai-mapping
 ```
 
+## Agent Skill
+
+The reusable Agent Skill at [`skills/slide-of-life/`](skills/slide-of-life/SKILL.md)
+guides compatible coding agents through safe manifest preflight, local CLI execution,
+exit-code handling, artifact interpretation, optional schema assistance, and
+review-required repair proposals. The `slide-of-life` CLI remains the scientific
+execution engine; the skill neither reimplements detectors nor grants an agent data
+access by itself.
+
+Copy the `skills/slide-of-life` directory into a location supported by the agent
+client you use, following the current
+[OpenAI Codex Skills documentation](https://developers.openai.com/codex/skills)
+or another client's documented installation process. Availability and installation
+surfaces vary by product and plan, so this repository does not claim universal
+ChatGPT availability or publish the skill automatically. The packaged files follow
+the [Agent Skills specification](https://agentskills.io/specification) `SKILL.md`
+directory convention and include optional OpenAI UI metadata.
+
 ## Reusable GitHub Action
 
 Callers must check out their manifests and select Python 3.11 before invoking the
@@ -91,7 +109,8 @@ CLI rather than reimplementing the audit engine.
   with:
     python-version: "3.11"
 - id: lineage
-  uses: ppandya6/BuildWeek@codex/task-11-github-action
+  # Replace with a reviewed full commit SHA or future release tag.
+  uses: ppandya6/BuildWeek@<pinned-ref>
   with:
     train-manifest: data/train.csv
     test-manifest: data/test.csv

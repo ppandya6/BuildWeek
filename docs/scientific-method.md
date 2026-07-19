@@ -173,3 +173,12 @@ never prompt or open a browser. Missing credentials produce deterministic fallba
 when the already mapped image or record identifiers provide minimum coverage and a
 report warning records that no AI request occurred. Without minimum coverage the
 run fails with a manual schema-map and environment-secret guidance.
+
+
+## Task 12 Agent Skill orchestration
+
+The packaged Agent Skill changes orchestration and guidance only. It wraps the
+existing public CLI and does not change detectors, policies, scientific evidence,
+repair logic, or report semantics. Skill-generated summaries must retain the
+separation between factual findings, policy outcomes, and review-required repair
+proposals and must never invent scientific evidence.

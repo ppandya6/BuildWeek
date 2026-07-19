@@ -28,6 +28,8 @@ jobs:
         run: ruff check .
       - name: Type check
         run: mypy src
+      - name: Validate skill package
+        run: python scripts/validate_skill.py
       - name: Test
         run: >-
           python -c "import os, pytest;
