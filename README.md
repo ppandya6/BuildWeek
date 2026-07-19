@@ -38,6 +38,33 @@ candidate rather than identity evidence, and repair requires researcher review.
 See [`examples/demo/README.md`](examples/demo/README.md) for details and PowerShell
 syntax.
 
+## Installation
+
+### From a future PyPI release
+
+The project has **not** been published to PyPI. After a separately approved
+publication, the intended Bash or PowerShell command will be:
+
+```powershell
+python -m pip install slide-of-life
+```
+
+### From a downloaded source archive
+
+Extract it, enter its directory, and run: `python -m pip install .`.
+
+### From a built wheel
+
+PowerShell: `python -m pip install path\to\slide_of_life-0.1.0a1-py3-none-any.whl`
+
+Bash: `python -m pip install path/to/slide_of_life-0.1.0a1-py3-none-any.whl`
+
+### Optional AI support
+
+After a future PyPI publication, use `python -m pip install "slide-of-life[ai]"`.
+For local source use `python -m pip install ".[ai]"`. The base distribution does
+not install OpenAI and API access remains explicit opt-in.
+
 ## Development installation
 
 ```bash

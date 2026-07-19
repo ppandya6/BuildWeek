@@ -52,3 +52,7 @@ jobs:
           tests/test_ai_onboarding.py::test_explicit_openai_api_key_fixture_enables_key_path
           tests/test_ai_schema.py::test_fake_structured_client_returns_proposal_without_raw_response
           -q
+
+      - name: Build and validate distributions
+        if: runner.os == 'Linux'
+        run: python scripts/validate_distribution.py

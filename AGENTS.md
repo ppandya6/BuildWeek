@@ -130,3 +130,10 @@ not fabricate findings, and must preserve factual detection, policy evaluation,
 and repair-proposal separation. Protect secrets and source data, keep examples
 synthetic, keep skill references synchronized with CLI behavior, and keep skill
 validation network-free.
+
+## Release constraints
+
+Never publish without explicit approval. Validate built artifacts in clean
+environments, keep OpenAI optional, and never place credentials in release
+workflows. Preserve runtime/metadata version consistency, inspect source and wheel
+contents, and never describe an audit as contamination-free certification.
