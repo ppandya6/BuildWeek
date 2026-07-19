@@ -142,7 +142,7 @@ CLI rather than reimplementing the audit engine.
     python-version: "3.11"
 - id: lineage
   # Replace with a reviewed full commit SHA or future release tag.
-  uses: ppandya6/BuildWeek@<pinned-ref>
+  uses: ppandya6/Slide-of-Life@<pinned-ref>
   with:
     train-manifest: data/train.csv
     test-manifest: data/test.csv

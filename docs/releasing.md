@@ -24,10 +24,10 @@ tags only. It builds once, validates and uploads the candidate, then reuses that
 workflow-run artifact. The existing `release.yml` remains a nonpublishing release
 candidate builder.
 
-Pin and review every release action by immutable commit. A future repository
-rename is optional, but should occur before Trusted Publisher registration because
-it can change Action references, documentation/release URLs, and the publisher's
-repository identity.
+Pin and review every release action by immutable commit. The repository identity
+is finalized as `ppandya6/Slide-of-Life`; any future identity change must happen
+before Trusted Publisher registration because it changes Action references,
+documentation/release URLs, and the publisher's repository identity.
 
 ## One-time GitHub environment setup
 
@@ -45,7 +45,7 @@ Repository YAML cannot establish these administrative protections.
 ## One-time PyPI project/account setup
 
 After the project exists and before production, an owner must register a PyPI
-Trusted Publisher for owner `ppandya6`, repository `BuildWeek`, workflow
+Trusted Publisher for owner `ppandya6`, repository `Slide-of-Life`, workflow
 `publish.yml`, and environment `pypi`. Confirm these values on PyPI rather than
 assuming repository code configured them. The publish job requests an OIDC token
 and supplies no password. PyPI and TestPyPI have separate publisher configuration.

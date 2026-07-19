@@ -11,7 +11,7 @@ steps:
       python-version: "3.11"
 
   - id: audit
-    uses: ppandya6/BuildWeek@<pinned-ref>
+    uses: ppandya6/Slide-of-Life@<pinned-ref>
     with:
       train-manifest: data/generated_train.csv
       test-manifest: data/generated_test.csv
@@ -29,7 +29,7 @@ With explicitly requested AI schema assistance, use the existing boolean Action 
 
 ```yaml
   - id: audit
-    uses: ppandya6/BuildWeek@<pinned-ref>
+    uses: ppandya6/Slide-of-Life@<pinned-ref>
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     with:

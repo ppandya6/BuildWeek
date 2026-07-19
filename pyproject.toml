@@ -48,8 +48,8 @@ slidelineage = "slidelineage.cli:compatibility_app"
 slide-of-life = "slidelineage.cli:app"
 
 [project.urls]
-Repository = "https://github.com/ppandya6/BuildWeek"
-Documentation = "https://github.com/ppandya6/BuildWeek#readme"
+Repository = "https://github.com/ppandya6/Slide-of-Life"
+Documentation = "https://github.com/ppandya6/Slide-of-Life#readme"
 
 [tool.hatch.version]
 path = "src/slidelineage/__init__.py"
