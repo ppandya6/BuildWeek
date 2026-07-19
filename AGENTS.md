@@ -106,3 +106,11 @@ Future work must keep AI optional, send no raw rows or images, deterministically
 validate every semantic-column proposal, and require explicit acceptance before
 application. AI must never create findings, policy outcomes, or repair decisions.
 Record model/provider provenance, mock every AI call, and keep CI network-free.
+
+## Task 11 GitHub Action constraints
+
+Future action inputs must remain backward compatible. Never interpolate user paths
+into shell command strings; preserve CLI exit-code meaning, keep AI opt-in, and
+exclude secrets from logs and outputs. Action tests must cover Linux and Windows
+path behavior. The action may generate review-required repair proposals but must
+never commit repairs or replace source manifests automatically.

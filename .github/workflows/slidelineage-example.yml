@@ -1,0 +1,45 @@
+name: SlideLineage action example
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-audit:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install demo generator dependencies
+        run: python -m pip install Pillow
+      - name: Generate deterministic synthetic demo
+        run: python scripts/generate_demo.py --force
+      - name: Audit intentional demo violations
+        id: audit
+        uses: ./
+        with:
+          train-manifest: examples/demo/generated/train_manifest.csv
+          test-manifest: examples/demo/generated/test_manifest.csv
+          images-dir: examples/demo/generated/images
+          schema-map: examples/demo/schema-map.yaml
+          output-dir: slidelineage-artifacts
+          repair: "true"
+          fail-on-violations: "false"
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slidelineage-${{ runner.os }}
+          path: |
+            slidelineage-artifacts/report.json
+            slidelineage-artifacts/report.html
+            slidelineage-artifacts/findings.csv
+            slidelineage-artifacts/repair_proposal.csv
+          if-no-files-found: error

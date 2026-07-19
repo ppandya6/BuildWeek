@@ -78,6 +78,60 @@ slidelineage audit \
   --accept-validated-ai-mapping
 ```
 
+## Reusable GitHub Action
+
+Callers must check out their manifests and select Python 3.11 before invoking the
+local composite action. Before a tagged package release exists, the action installs
+SlideLineage predictably from `${{ github.action_path }}` and wraps the existing
+CLI rather than reimplementing the audit engine.
+
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-python@v5
+  with:
+    python-version: "3.11"
+- id: lineage
+  uses: ppandya6/BuildWeek@codex/task-11-github-action
+  with:
+    train-manifest: data/train.csv
+    test-manifest: data/test.csv
+    images-dir: data/images
+    output-dir: slidelineage-artifacts
+    fail-on-violations: "true"
+- if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: slidelineage-audit
+    path: |
+      slidelineage-artifacts/report.json
+      slidelineage-artifacts/report.html
+      slidelineage-artifacts/findings.csv
+      slidelineage-artifacts/repair_proposal.csv
+```
+
+Required inputs are `train-manifest` and `test-manifest`. Optional inputs configure
+the image root, schema map, output directory, policy profile, repair, overwrite
+behavior, institution grouping, repair target, image comparison limits and
+thresholds, optional AI schema assistance, and `fail-on-violations`. AI is disabled
+by default and no API key is an action input; opt-in provider access uses its
+standard environment variable supplied through GitHub secrets.
+
+The stable outputs are `status`, `exit-code`, `report-json`, `report-html`,
+`findings-csv`, `repair-proposal-csv`, `violation-count`, and `review-count`.
+`repair-proposal-csv` is empty when no proposal was generated. CLI exit 0 succeeds,
+exit 1 always fails, and exit 2 represents a completed audit with policy
+violations. With the default `fail-on-violations: "true"`, exit 2 fails only after
+reports and outputs are written; setting it to `"false"` makes the action succeed
+with `status=violations` so a workflow can handle policy results itself.
+
+The action creates artifacts but never uploads them, comments on pull requests,
+changes manifests, or commits repairs. Use `actions/upload-artifact` with
+`if: always()` as above so reports survive policy failures. Raw rows stay within
+the runner process. Reports do not prove that a split is contamination-free, and
+every generated repair remains a proposal requiring researcher review. See
+`.github/workflows/slidelineage-example.yml` for a manual, synthetic, AI-free
+Ubuntu and Windows example.
+
 ## Verification commands
 
 Bash:

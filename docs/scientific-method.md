@@ -147,3 +147,18 @@ Reports preserve evidence boundaries. JSON, CSV, and HTML artifacts include fact
 Exit code `0` means the audit completed without policy violations. Exit code `2` means the audit completed with policy violations and artifacts are still written. Exit code `1` is reserved for input, configuration, execution, or artifact-writing failures.
 
 The HTML report is standalone and text-oriented for image evidence in this milestone. It uses autoescaping, embeds CSS locally, avoids remote assets, and defers thumbnail embedding to later work. The repair CSV remains a proposed partition output requiring researcher review and must not be treated as an automatic correction.
+
+## Task 11 execution through GitHub Actions
+
+The composite GitHub Action changes the execution context, not the scientific
+logic: it invokes the same deterministic audit pipeline and validates the same
+typed `AuditReport`. CI status reflects the configured policy behavior. Exit 2
+can either fail the step or be retained as a successful completed audit with
+violations; exit 1 always fails.
+
+Publishing report artifacts does not turn findings into proof of independence or
+contamination. Image similarity remains review evidence rather than lineage or
+identity evidence, and repairs remain proposals requiring researcher review. Raw
+manifest rows remain local to the runner process. AI is disabled by default; only
+when explicitly enabled may a GitHub-hosted runner send manifest headers and
+privacy-bounded aggregates to the configured provider, never raw rows or images.

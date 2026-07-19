@@ -1,0 +1,63 @@
+name: SlideLineage deterministic audit
+description: Audit dataset partition provenance and overlap without claiming a dataset is contamination-free.
+author: SlideLineage contributors
+inputs:
+  train-manifest: {description: "Path to the train CSV manifest.", required: true}
+  test-manifest: {description: "Path to the test CSV manifest.", required: true}
+  images-dir: {description: "Optional image root.", required: false, default: ""}
+  schema-map: {description: "Optional deterministic schema-map YAML path.", required: false, default: ""}
+  output-dir: {description: "Directory for generated artifacts.", required: false, default: "slidelineage-artifacts"}
+  policy-profile: {description: "Split policy profile.", required: false, default: "patient_independent_pathology_benchmark"}
+  repair: {description: "Generate a review-required repair proposal.", required: false, default: "false"}
+  force: {description: "Replace known artifacts in the output directory.", required: false, default: "true"}
+  group-by-institution: {description: "Keep institutions together in repair proposals.", required: false, default: "false"}
+  target-train-fraction: {description: "Optional repair target strictly between 0 and 1.", required: false, default: ""}
+  max-image-pairs: {description: "Maximum complete cross-partition image comparisons.", required: false, default: "100000"}
+  phash-distance-threshold: {description: "Perceptual-hash review threshold.", required: false, default: "8"}
+  dhash-distance-threshold: {description: "Difference-hash review threshold.", required: false, default: "12"}
+  image-max-pixels: {description: "Maximum decoded pixels per image.", required: false, default: "25000000"}
+  ai-schema-map: {description: "Opt in to AI schema proposals; requires provider credentials in the environment.", required: false, default: "false"}
+  accept-validated-ai-mapping: {description: "Apply only deterministically validated AI mappings.", required: false, default: "false"}
+  ai-model: {description: "Model provenance when AI schema assistance is enabled.", required: false, default: "gpt-5.6"}
+  fail-on-violations: {description: "Fail the action on completed audits with policy violations.", required: false, default: "true"}
+outputs:
+  status: {description: "passed or violations.", value: "${{ steps.audit.outputs.status }}"}
+  exit-code: {description: "Underlying CLI exit code (0 or 2 for completed audits).", value: "${{ steps.audit.outputs.exit-code }}"}
+  report-json: {description: "Normalized report.json path.", value: "${{ steps.audit.outputs.report-json }}"}
+  report-html: {description: "Normalized report.html path.", value: "${{ steps.audit.outputs.report-html }}"}
+  findings-csv: {description: "Normalized findings.csv path.", value: "${{ steps.audit.outputs.findings-csv }}"}
+  repair-proposal-csv: {description: "Normalized repair CSV path, or empty when absent.", value: "${{ steps.audit.outputs.repair-proposal-csv }}"}
+  violation-count: {description: "Typed report policy-violation count.", value: "${{ steps.audit.outputs.violation-count }}"}
+  review-count: {description: "Typed report review-item count.", value: "${{ steps.audit.outputs.review-count }}"}
+runs:
+  using: composite
+  steps:
+    - name: Install SlideLineage action source
+      shell: bash
+      run: python -m pip install "${{ github.action_path }}"
+    - name: Run deterministic audit
+      id: audit
+      shell: bash
+      env:
+        INPUT_TRAIN_MANIFEST: "${{ inputs.train-manifest }}"
+        INPUT_TEST_MANIFEST: "${{ inputs.test-manifest }}"
+        INPUT_IMAGES_DIR: "${{ inputs.images-dir }}"
+        INPUT_SCHEMA_MAP: "${{ inputs.schema-map }}"
+        INPUT_OUTPUT_DIR: "${{ inputs.output-dir }}"
+        INPUT_POLICY_PROFILE: "${{ inputs.policy-profile }}"
+        INPUT_REPAIR: "${{ inputs.repair }}"
+        INPUT_FORCE: "${{ inputs.force }}"
+        INPUT_GROUP_BY_INSTITUTION: "${{ inputs.group-by-institution }}"
+        INPUT_TARGET_TRAIN_FRACTION: "${{ inputs.target-train-fraction }}"
+        INPUT_MAX_IMAGE_PAIRS: "${{ inputs.max-image-pairs }}"
+        INPUT_PHASH_DISTANCE_THRESHOLD: "${{ inputs.phash-distance-threshold }}"
+        INPUT_DHASH_DISTANCE_THRESHOLD: "${{ inputs.dhash-distance-threshold }}"
+        INPUT_IMAGE_MAX_PIXELS: "${{ inputs.image-max-pixels }}"
+        INPUT_AI_SCHEMA_MAP: "${{ inputs.ai-schema-map }}"
+        INPUT_ACCEPT_VALIDATED_AI_MAPPING: "${{ inputs.accept-validated-ai-mapping }}"
+        INPUT_AI_MODEL: "${{ inputs.ai-model }}"
+        INPUT_FAIL_ON_VIOLATIONS: "${{ inputs.fail-on-violations }}"
+      run: python "${{ github.action_path }}/scripts/run_action.py"
+branding:
+  icon: shield
+  color: blue
