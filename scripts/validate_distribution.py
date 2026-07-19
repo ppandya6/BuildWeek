@@ -25,6 +25,7 @@ REQUIRED_SDIST = {
     "tests/test_distribution_package.py",
 }
 FORBIDDEN = ("gh" + "p_", "github" + "_pat_", "/" + "Users/", "\\" + "Users\\")
+CHECKSUM_NAME = "SHA256SUMS"
 
 
 def run(
@@ -60,6 +61,30 @@ def fixture(path: Path) -> tuple[Path, Path]:
             writer.writerow(["record_id", "patient_id"])
             writer.writerow(row)
     return train, test
+
+
+def classify_artifacts(directory: Path) -> tuple[Path, Path, Path | None]:
+    """Return the sole wheel, sdist, and optional checksum support file."""
+    artifacts = sorted(directory.iterdir())
+    wheels = [path for path in artifacts if path.is_file() and path.suffix == ".whl"]
+    sdists = [
+        path for path in artifacts if path.is_file() and path.name.endswith(".tar.gz")
+    ]
+    checksums = [
+        path for path in artifacts if path.is_file() and path.name == CHECKSUM_NAME
+    ]
+    recognized = {*wheels, *sdists, *checksums}
+    unexpected = [path for path in artifacts if path not in recognized]
+    if unexpected:
+        raise RuntimeError(f"unexpected distribution entries: {unexpected}")
+    if len(wheels) != 1 or len(sdists) != 1:
+        raise RuntimeError(f"expected one wheel and sdist: {artifacts}")
+    return wheels[0], sdists[0], checksums[0] if checksums else None
+
+
+def check_distribution_metadata(wheel: Path, sdist: Path) -> None:
+    """Ask Twine to check Python distributions, excluding support artifacts."""
+    run([sys.executable, "-m", "twine", "check", str(wheel), str(sdist)])
 
 
 def smoke(artifact: Path, *, ai: bool = False) -> str:
@@ -146,13 +171,8 @@ def main() -> int:
         shutil.rmtree(ROOT / "dist", ignore_errors=True)
         shutil.rmtree(ROOT / "build", ignore_errors=True)
         run([sys.executable, "-m", "build"])
-    artifacts = sorted((ROOT / "dist").iterdir())
-    wheels = [p for p in artifacts if p.suffix == ".whl"]
-    sdists = [p for p in artifacts if p.name.endswith(".tar.gz")]
-    if len(wheels) != 1 or len(sdists) != 1:
-        raise RuntimeError(f"expected one wheel and sdist: {artifacts}")
-    run([sys.executable, "-m", "twine", "check", *map(str, artifacts)])
-    wheel, sdist = wheels[0], sdists[0]
+    wheel, sdist, _checksums = classify_artifacts(ROOT / "dist")
+    check_distribution_metadata(wheel, sdist)
     with zipfile.ZipFile(wheel) as archive:
         wheel_names = archive.namelist()
         payloads = [archive.read(n) for n in wheel_names]
