@@ -141,7 +141,9 @@ def test_fake_structured_client_returns_proposal_without_raw_response(
 
 
 def test_none_client_constructs_sdk_client_without_network(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_openai_constructor_boundary: None,
 ) -> None:
     pair, config = _pair(tmp_path)
     request = build_ai_schema_request(
@@ -181,7 +183,9 @@ def test_none_client_constructs_sdk_client_without_network(
 
 
 def test_none_client_reports_unavailable_optional_sdk(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_openai_constructor_boundary: None,
 ) -> None:
     pair, config = _pair(tmp_path)
     request = build_ai_schema_request(
@@ -193,6 +197,15 @@ def test_none_client_reports_unavailable_optional_sdk(
 
     monkeypatch.setattr("slidelineage.ai_schema.import_module", missing_sdk)
     with pytest.raises(AiSdkUnavailableError, match="pip install"):
+        request_ai_schema_proposal(request, config)
+
+
+def test_live_provider_boundary_is_blocked_by_default(tmp_path: Path) -> None:
+    pair, config = _pair(tmp_path)
+    request = build_ai_schema_request(
+        pair.train, pair.test, map_manifest_pair(pair, config), config
+    )
+    with pytest.raises(AssertionError, match="live OpenAI client"):
         request_ai_schema_proposal(request, config)
 
 

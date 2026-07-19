@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Iterator
 
 import pytest
@@ -174,3 +175,82 @@ def test_quit_eof_and_interrupt_are_focused(event: object) -> None:
 
 def test_result_contract_has_no_secret_field() -> None:
     assert "key" not in AiCredentialResolution.__dataclass_fields__
+
+
+@pytest.mark.parametrize("value", ["", " ", "\t\r\n"])
+def test_blank_and_whitespace_keys_are_absent(value: str) -> None:
+    result = resolve_ai_credentials(
+        ai_requested=True,
+        deterministic_coverage_sufficient=True,
+        environment={"OPENAI_API_KEY": value},
+        interactive=False,
+    )
+    assert not result.ai_enabled_for_run
+    assert result.credential_source == "unavailable"
+
+
+def test_ambient_openai_key_is_removed_for_no_key_tests() -> None:
+    assert "OPENAI_API_KEY" not in os.environ
+    result = resolve_ai_credentials(
+        ai_requested=True,
+        deterministic_coverage_sufficient=True,
+        interactive=False,
+    )
+    assert result.credential_source == "unavailable"
+
+
+def test_explicit_openai_api_key_fixture_enables_key_path(
+    openai_api_key: str,
+) -> None:
+    result = resolve_ai_credentials(
+        ai_requested=True,
+        deterministic_coverage_sufficient=False,
+        input_fn=lambda _: pytest.fail("credential path prompted unexpectedly"),
+    )
+    assert result.ai_enabled_for_run
+    assert result.credential_source == "environment"
+    assert openai_api_key not in repr(result)
+
+
+def test_ci_fixture_forces_noninteractive(
+    ci_environment: None, interactive_terminal: tuple[object, object]
+) -> None:
+    stdin, stdout = interactive_terminal
+    assert not is_interactive_environment(
+        stdin_isatty=stdin.isatty,
+        stdout_isatty=stdout.isatty,
+        stderr_isatty=stdout.isatty,
+    )
+
+
+def test_github_actions_fixture_forces_noninteractive(
+    github_actions_environment: dict[str, object],
+    interactive_terminal: tuple[object, object],
+) -> None:
+    stdin, stdout = interactive_terminal
+    assert not is_interactive_environment(
+        stdin_isatty=stdin.isatty,
+        stdout_isatty=stdout.isatty,
+        stderr_isatty=stdout.isatty,
+    )
+    assert github_actions_environment
+
+
+def test_fake_streams_control_terminal_detection(
+    interactive_terminal: tuple[object, object],
+    noninteractive_terminal: tuple[object, object],
+) -> None:
+    interactive_in, interactive_out = interactive_terminal
+    noninteractive_in, noninteractive_out = noninteractive_terminal
+    assert is_interactive_environment(
+        environment={},
+        stdin_isatty=interactive_in.isatty,
+        stdout_isatty=interactive_out.isatty,
+        stderr_isatty=noninteractive_out.isatty,
+    )
+    assert not is_interactive_environment(
+        environment={},
+        stdin_isatty=noninteractive_in.isatty,
+        stdout_isatty=interactive_out.isatty,
+        stderr_isatty=interactive_out.isatty,
+    )

@@ -132,7 +132,7 @@ def test_windows_like_path_remains_one_argument(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(("fail", "expected"), [("true", 2), ("false", 0)])
 def test_end_to_end_outputs_exit_and_summary(
-    tmp_path: Path, fail: str, expected: int
+    tmp_path: Path, fail: str, expected: int, openai_api_key: str
 ) -> None:
     generated = tmp_path / "generated"
     subprocess.run(
@@ -186,6 +186,10 @@ def test_end_to_end_outputs_exit_and_summary(
     assert "does not make clinical claims" in summary_text
     assert "Image similarity is a review candidate" in summary_text
     assert "proposal requiring researcher review" in summary_text
+    exposed_text = result.stdout + result.stderr + emitted + summary_text
+    for name in ("report.json", "report.html", "findings.csv", "repair_proposal.csv"):
+        exposed_text += (output / name).read_text(encoding="utf-8")
+    assert openai_api_key not in exposed_text
 
 
 def test_invalid_configuration_is_concise_and_writes_no_outputs(tmp_path: Path) -> None:

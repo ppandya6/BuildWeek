@@ -8,6 +8,7 @@ jobs:
   checks:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.11"]
@@ -28,4 +29,24 @@ jobs:
       - name: Type check
         run: mypy src
       - name: Test
-        run: pytest -q
+        run: >-
+          python -c "import os, pytest;
+          [os.environ.pop(k, None) for k in
+          ('OPENAI_API_KEY','OPENAI_ORG_ID','OPENAI_PROJECT')];
+          raise SystemExit(pytest.main(['-q']))"
+      - name: Test no-key isolation smoke
+        run: >-
+          python -c "import os, pytest;
+          [os.environ.pop(k, None) for k in
+          ('OPENAI_API_KEY','OPENAI_ORG_ID','OPENAI_PROJECT')];
+          raise SystemExit(pytest.main([
+          'tests/test_ai_onboarding.py::test_blank_and_whitespace_keys_are_absent',
+          '-q']))"
+      - name: Test fake-key isolation smoke
+        env:
+          OPENAI_API_KEY: test-secret-never-log-123
+        run: >-
+          python -m pytest
+          tests/test_ai_onboarding.py::test_explicit_openai_api_key_fixture_enables_key_path
+          tests/test_ai_schema.py::test_fake_structured_client_returns_proposal_without_raw_response
+          -q
