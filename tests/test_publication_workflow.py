@@ -61,6 +61,19 @@ def test_build_once_then_download_exact_artifact():
     assert "python -m build" not in publish_steps
 
 
+def test_downloaded_artifact_includes_checksums_before_artifact_only_validation():
+    jobs = workflow()["jobs"]
+    build_steps = str(jobs["build"]["steps"])
+    validate_steps = str(jobs["validate"]["steps"])
+
+    assert build_steps.index("generate_checksums.py dist") < build_steps.index(
+        "upload-artifact"
+    )
+    assert validate_steps.index("download-artifact") < validate_steps.index(
+        "validate_distribution.py --artifacts-only"
+    )
+
+
 def test_dry_run_cannot_publish_or_create_release():
     jobs = workflow()["jobs"]
     assert "dry-run == 'false'" in jobs["publish"]["if"]
