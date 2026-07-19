@@ -32,10 +32,24 @@ def test_metadata_and_entry_points():
 def test_release_documents_are_synchronized_and_safe():
     readme = (ROOT / "README.md").read_text()
     changelog = (ROOT / "CHANGELOG.md").read_text()
-    assert (
-        "future PyPI release" in readme
-        and "slide_of_life-0.1.0a1-py3-none-any.whl" in readme
-    )
+    assert 'python -m pip install "slide-of-life==0.1.0a1"' in readme
+    assert "Python 3.11 or newer is required" in readme
+    assert "future PyPI release" not in readme
+    assert "https://github.com/ppandya6/Slide-of-Life" in readme
+    assert "Codex" in readme and "GPT-5.6" in readme
+    assert "alpha prerelease" in readme
+    assert "not a clinical device" in readme
+    assert "uses: ppandya6/Slide-of-Life@v0.1.0a1" in readme
+    for option in (
+        "--train examples/demo/generated/train_manifest.csv",
+        "--test examples/demo/generated/test_manifest.csv",
+        "--images examples/demo/generated/images",
+        "--schema-map examples/demo/schema-map.yaml",
+        "--output artifacts/demo-audit",
+        "--repair",
+        "--force",
+    ):
+        assert option in readme
     version_headings = re.findall(
         rf"^##\s+{re.escape(__version__)}\s+-\s+(.+)$", changelog, re.MULTILINE
     )

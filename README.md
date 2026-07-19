@@ -1,297 +1,257 @@
 # Slide-of-Life
 
-Slide-of-Life is a local scientific developer tool planned to audit train/test partition relationships in computational-pathology datasets. It is intended for researchers, benchmark maintainers, data engineers, and scientific software developers who need transparent evidence about partition independence before model training or evaluation.
+Slide-of-Life audits computational-pathology dataset partitions for hidden
+patient, slide, lineage, and image contamination before those errors invalidate
+model evaluation.
 
-## Current implementation status
+> Built for OpenAI Build Week using Codex and GPT-5.6.
 
-The repository foundation, typed contract layer, and deterministic CSV ingestion boundary exist: packaging, documentation, developer tooling, CI, CLI help/version output, `AuditConfig`, the default `SplitPolicy`, typed domain/report contracts, conservative normalization helpers, source-byte SHA-256 manifest provenance, typed loaded-manifest contracts, deterministic semantic schema mapping, explicit schema overrides, canonical record construction, stable record IDs, strict TCGA parsing, and lineage conflict reporting are implemented. Schema mapping supports explicit YAML/JSON maps, direct column overrides, deterministic header/value scoring, unresolved ambiguity, ranked alternatives, and train/test consistency messages. Canonical record construction preserves source provenance, deterministic digests, direct and TCGA-derived lineage evidence, and partition warnings while avoiding overlap detection. The audit pipeline arrives in later stages. Identifier overlap facts, image path auditing, byte fingerprints, canonical pixel fingerprints, perceptual similarity candidates, and evidence-rich factual findings are now implemented. Relationship graph materialization, policy evaluation, evaluated findings, deterministic repair proposals, report writers, deterministic audit orchestration, standalone HTML/JSON/CSV artifact generation, repair CSV output, and the operational audit CLI are now implemented. The reproducible synthetic demonstration is implemented. Optional OpenAI API integration remains pending.
+## The problem
 
-## Deterministic-first architecture
+Train/test leakage can make a model appear better than it is. Pathology datasets
+often contain related patients, slides, crops, re-encodings, or derived images,
+and filenames or simple file hashes do not expose every relationship. Undetected
+contamination can undermine papers, benchmarks, and product claims.
 
-The planned architecture separates:
+## What Slide-of-Life does
 
-1. Deterministic factual relationship detection into `FactualFinding` records.
-2. Evaluation under an explicit `SplitPolicy` into `EvaluatedFinding` records.
-3. Optional repair proposals requiring researcher review.
-4. Optional GPT-5.6 schema interpretation, with deterministic scientific evidence remaining authoritative.
+Slide-of-Life runs a local, deterministic-first pipeline:
 
-## Operational synthetic demo
+1. Ingest manifests and explicit schema mappings.
+2. Normalize records while retaining source and row provenance.
+3. Detect factual identifier overlaps, exact image relationships, and separate
+   image-similarity review candidates.
+4. Evaluate those facts under an explicit partition policy.
+5. Produce findings with reviewable evidence and policy reasons.
+6. Propose a deterministic replacement partition when requested.
+7. Write JSON, CSV, and standalone HTML reports.
 
-All demo identifiers and pixels are synthetic. After development installation,
-generate and audit from the repository root:
+These outputs are deliberately distinct: a **factual finding** records detected
+evidence; a **policy violation** is that fact evaluated against a named rule; and
+a **repair proposal** is a suggested partition that still requires researcher
+review. Image similarity is never promoted to patient or slide identity.
+
+## Install from PyPI
+
+**Python 3.11 or newer is required.** Version `0.1.0a1` is an alpha prerelease.
+
+Install the exact verified release:
 
 ```bash
+python -m pip install "slide-of-life==0.1.0a1"
+```
+
+Or ask pip to select the available prerelease:
+
+```bash
+python -m pip install --pre slide-of-life
+```
+
+In PowerShell, select Python 3.11 explicitly when multiple versions are installed:
+
+```powershell
+py -3.11 -m pip install "slide-of-life==0.1.0a1"
+```
+
+## Verify installation
+
+```bash
+slide-of-life --version
+slide-of-life --help
+```
+
+`slide-of-life` is the primary command. The deprecated `slidelineage --help`
+command remains available as a compatibility alias.
+
+## Fastest demo
+
+The repository includes a deterministic, entirely synthetic fixture. Starting
+after the PyPI installation above:
+
+```bash
+git clone https://github.com/ppandya6/Slide-of-Life.git
+cd Slide-of-Life
 python scripts/generate_demo.py --force
+
 slide-of-life audit \
   --train examples/demo/generated/train_manifest.csv \
   --test examples/demo/generated/test_manifest.csv \
   --images examples/demo/generated/images \
   --schema-map examples/demo/schema-map.yaml \
   --output artifacts/demo-audit \
-  --repair --force
+  --repair \
+  --force
 ```
 
-Open `artifacts/demo-audit/report.html` locally. Exit code `2` is expected: the
-audit completed and wrote artifacts, but deliberate relationships violate the
-default policy. No clinical interpretation is performed. Similarity is a review
-candidate rather than identity evidence, and repair requires researcher review.
-See [`examples/demo/README.md`](examples/demo/README.md) for details and PowerShell
-syntax.
+**Exit code 2 is expected.** It means the audit completed, wrote its reports, and
+found relationships disallowed by the default policy. It is not an execution
+failure. Open `artifacts/demo-audit/report.html` to inspect the result. The output
+directory contains:
 
-## Installation
+- `report.html` — standalone human-readable report;
+- `report.json` — typed machine-readable report;
+- `findings.csv` — evaluated findings; and
+- `repair_proposal.csv` — review-required proposed assignments.
 
-Release status: `0.1.0a1` is a release candidate and PEP 440 prerelease. It is not
-claimed to be on PyPI. Installation from this source checkout or a reviewed built
-wheel remains supported; the PyPI command below applies only after a separately
-approved, verified publication.
+PowerShell users can replace each trailing `\` with a backtick or place the audit
+command on one line. See the [demo guide](examples/demo/README.md) for details.
 
-### From a future PyPI release
+## What the demo reveals
 
-The project has **not** been published to PyPI. After a separately approved
-publication, the intended Bash or PowerShell command will be:
+The fixture plants one finding in each supported relationship category:
 
-```powershell
-python -m pip install slide-of-life
-```
+- confirmed patient, specimen, and slide overlaps across train and test;
+- exact byte-content and decoded-pixel-content duplicates;
+- an allowed institution overlap with provenance;
+- a near-duplicate image-similarity candidate for human review; and
+- a missing-image input-quality review item.
 
-### From a downloaded source archive
+The default policy marks the five confirmed cross-partition overlap/duplicate
+categories as violations. Similarity remains review evidence, and the generated
+repair remains only a proposal.
 
-Extract it, enter its directory, and run: `python -m pip install .`.
+## Visual report preview
 
-### From a built wheel
+<!-- TODO: Add final demo report screenshot before Devpost submission. -->
 
-PowerShell: `python -m pip install path\to\slide_of_life-0.1.0a1-py3-none-any.whl`
+Run the synthetic demo and open `artifacts/demo-audit/report.html` for the current
+standalone report.
 
-Bash: `python -m pip install path/to/slide_of_life-0.1.0a1-py3-none-any.whl`
+## Built with Codex and GPT-5.6
 
-### Optional AI support
+### Codex
 
-After a future PyPI publication, use `python -m pip install "slide-of-life[ai]"`.
-For local source use `python -m pip install ".[ai]"`. The base distribution does
-not install OpenAI and API access remains explicit opt-in.
+Codex was used extensively to design and implement the CLI and Python package,
+build tests and cross-platform CI, package the GitHub Action and Agent Skill,
+debug release failures, create the guarded Trusted Publishing infrastructure,
+and publish and verify the PyPI alpha. The result is a complete developer tool,
+not a model wrapper.
 
-## Development installation
+### GPT-5.6
+
+GPT-5.6 support is implemented for bounded schema interpretation: when explicitly
+enabled, it can propose mappings for unresolved manifest columns from headers and
+privacy-bounded aggregate statistics. The CLI and GitHub Action currently select
+`gpt-5.6` by default and record model/provider provenance.
+
+GPT-5.6 does **not** determine contamination findings, decide policy violations,
+or invent repair proposals. Deterministic code owns all three outputs. AI support
+is optional, and normal auditing works without an OpenAI key.
+
+## Optional AI support
+
+Install the optional OpenAI dependency with:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install "slide-of-life[ai]==0.1.0a1"
 ```
 
-Optional AI-assisted schema interpretation is installed separately:
+No API key is needed for deterministic auditing. Provider access occurs only when
+AI schema mapping is explicitly requested. Never paste keys into chat or commit
+them; provide credentials through standard environment configuration such as the
+`OPENAI_API_KEY` environment variable or a CI secret. Slide-of-Life sends no raw
+rows or images, validates every proposal deterministically, and requires explicit
+acceptance before applying a validated mapping. See the
+[scientific method](docs/scientific-method.md#task-10-optional-ai-schema-interpretation).
 
-```bash
-python -m pip install -e ".[dev,ai]"
-```
+## GitHub Action
 
-AI is explicit opt-in. Headers and aggregate missingness, uniqueness, cardinality,
-and abstract pattern flags may leave the machine; raw rows, literal values, image
-paths, and image bytes remain local. Because headers can themselves be sensitive,
-review them before enabling AI. Proposals are deterministically validated, but
-validation alone does not apply them. Explicit acceptance is required, and AI
-never creates scientific findings, policy decisions, or repairs.
-
-Proposal-only mode:
-
-```bash
-slide-of-life audit \
-  --train train.csv \
-  --test test.csv \
-  --output artifacts/audit \
-  --ai-schema-map
-```
-
-Explicitly accepted mode:
-
-```bash
-slide-of-life audit \
-  --train train.csv \
-  --test test.csv \
-  --output artifacts/audit \
-  --ai-schema-map \
-  --accept-validated-ai-mapping
-```
-
-## Agent Skill
-
-The reusable Agent Skill at [`skills/slide-of-life/`](skills/slide-of-life/SKILL.md)
-guides compatible coding agents through safe manifest preflight, local CLI execution,
-exit-code handling, artifact interpretation, optional schema assistance, and
-review-required repair proposals. The `slide-of-life` CLI remains the scientific
-execution engine; the skill neither reimplements detectors nor grants an agent data
-access by itself.
-
-Copy the `skills/slide-of-life` directory into a location supported by the agent
-client you use, following the current
-[OpenAI Codex Skills documentation](https://developers.openai.com/codex/skills)
-or another client's documented installation process. Availability and installation
-surfaces vary by product and plan, so this repository does not claim universal
-ChatGPT availability or publish the skill automatically. The packaged files follow
-the [Agent Skills specification](https://agentskills.io/specification) `SKILL.md`
-directory convention and include optional OpenAI UI metadata.
-
-## Reusable GitHub Action
-
-Callers must check out their manifests and select Python 3.11 before invoking the
-local composite action. Before a tagged package release exists, the action installs
-Slide-of-Life predictably from `${{ github.action_path }}` and wraps the existing
-CLI rather than reimplementing the audit engine.
+The composite Action invokes the same CLI and supports policy-aware CI. Pin the
+published release tag and check out the data before invoking it:
 
 ```yaml
 - uses: actions/checkout@v4
 - uses: actions/setup-python@v5
   with:
     python-version: "3.11"
-- id: lineage
-  # Replace with a reviewed full commit SHA or future release tag.
-  uses: ppandya6/Slide-of-Life@<pinned-ref>
+- id: audit
+  uses: ppandya6/Slide-of-Life@v0.1.0a1
   with:
     train-manifest: data/train.csv
     test-manifest: data/test.csv
     images-dir: data/images
+    schema-map: data/schema-map.yaml
     output-dir: slide-of-life-artifacts
+    repair: "true"
     fail-on-violations: "true"
 - if: always()
   uses: actions/upload-artifact@v4
   with:
     name: slide-of-life-audit
-    path: |
-      slide-of-life-artifacts/report.json
-      slide-of-life-artifacts/report.html
-      slide-of-life-artifacts/findings.csv
-      slide-of-life-artifacts/repair_proposal.csv
+    path: slide-of-life-artifacts/
 ```
 
-Required inputs are `train-manifest` and `test-manifest`. Optional inputs configure
-the image root, schema map, output directory, policy profile, repair, overwrite
-behavior, institution grouping, repair target, image comparison limits and
-thresholds, optional AI schema assistance, and `fail-on-violations`. AI is disabled
-by default and no API key is an action input; opt-in provider access uses its
-standard environment variable supplied through GitHub secrets.
+The Action writes reports before treating policy violations as a failure. AI is
+off by default; keys are never Action inputs. See [`action.yml`](action.yml) for
+all supported inputs and outputs.
 
-The stable outputs are `status`, `exit-code`, `report-json`, `report-html`,
-`findings-csv`, `repair-proposal-csv`, `violation-count`, and `review-count`.
-`repair-proposal-csv` is empty when no proposal was generated. CLI exit 0 succeeds,
-exit 1 always fails, and exit 2 represents a completed audit with policy
-violations. With the default `fail-on-violations: "true"`, exit 2 fails only after
-reports and outputs are written; setting it to `"false"` makes the action succeed
-with `status=violations` so a workflow can handle policy results itself.
+## Agent Skill
 
-The action creates artifacts but never uploads them, comments on pull requests,
-changes manifests, or commits repairs. Use `actions/upload-artifact` with
-`if: always()` as above so reports survive policy failures. Raw rows stay within
-the runner process. Reports do not prove that a split is contamination-free, and
-every generated repair remains a proposal requiring researcher review. See
-`.github/workflows/slidelineage-example.yml` for a manual, synthetic, AI-free
-Ubuntu and Windows example.
+The repository includes a reusable
+[Slide-of-Life Agent Skill](skills/slide-of-life/SKILL.md) for safe preflight,
+execution, and artifact interpretation. It wraps the public CLI instead of
+reimplementing detectors, policies, or repair logic.
 
-## Verification commands
+## Why it is different
 
-Bash:
+- Audits lineage and preserved provenance, not only filenames.
+- Keeps detected facts, explicit policy decisions, and repair proposals separate.
+- Leaves scientific findings deterministic while constraining optional AI to
+  schema assistance.
+- Operates locally by default and emits both machine-readable and human-readable
+  reports.
+- Ships as a PyPI package, CLI, GitHub Action, and Agent Skill.
+
+## Use cases
+
+- ML researchers validating experimental splits.
+- Pathology teams auditing dataset preparation.
+- Reviewers reproducing partition evidence.
+- CI systems blocking datasets that violate a declared policy.
+- Research teams preparing benchmarks or publications.
+
+## Limitations and safety
+
+Slide-of-Life is alpha software. It is not a clinical device or regulatory
+compliance product, and it does not certify a dataset as contamination-free.
+Findings and every repair proposal require human review. Audit quality depends on
+the available manifests, identifiers, images, and schema mapping; missing or
+ambiguous inputs limit what can be detected.
+
+The committed demo uses only fictional identifiers and generated pixels. Do not
+commit raw clinical data to this repository. Slide-of-Life makes no diagnosis,
+prognosis, treatment, biological interpretation, or clinical claim.
+
+## Project status
+
+- Current version: `0.1.0a1` (alpha prerelease).
+- Published on PyPI as a wheel and source distribution.
+- Public GitHub repository, prerelease, and build attestation available.
+- Active OpenAI Build Week submission preparation.
+- Post-alpha feedback, validation, and hardening are planned.
+
+## Links
+
+- [GitHub repository](https://github.com/ppandya6/Slide-of-Life)
+- [PyPI project](https://pypi.org/project/slide-of-life/0.1.0a1/)
+- [GitHub release `v0.1.0a1`](https://github.com/ppandya6/Slide-of-Life/releases/tag/v0.1.0a1)
+- [Changelog](CHANGELOG.md)
+- [Scientific method](docs/scientific-method.md)
+- [Product specification](docs/product-spec.md)
+- [Agent Skill](skills/slide-of-life/SKILL.md)
+
+## Development
 
 ```bash
-ruff format --check .
+python -m pip install -e ".[dev]"
+pytest -q
 ruff check .
 mypy src
-pytest -q
-slide-of-life --help
-slide-of-life --version
 ```
 
-PowerShell:
-
-```powershell
-ruff format --check .
-ruff check .
-mypy src
-pytest -q
-slide-of-life --help
-slide-of-life --version
-```
-
-## Planned output files
-
-Later reporting stages plan to produce:
-
-- `report.json`
-- `report.html`
-- `findings.csv`
-- `repair_proposal.csv`, only when repair proposal generation is requested
-
-Task 9 supplies the reproducible synthetic fixture and end-to-end assertions.
-
-## Privacy and scope
-
-Deterministic auditing is planned to run locally. API access must be opt-in, API keys must not be stored in the repository, and future GPT requests must avoid complete manifests or images. Slide-of-Life is non-clinical software: it must not make diagnosis, prognosis, treatment, biological interpretation, or clinical claims.
+Run `ruff format --check .` before contributing. Deeper packaging and publication
+guidance is in [the release documentation](docs/releasing.md).
 
 ## License
 
-Slide-of-Life is distributed under the MIT License. See [LICENSE](LICENSE).
-
-## Task 7 implementation status
-
-Relationship graph contracts and deterministic materialization now exist for canonical records and factual findings. Explicit `SplitPolicy` evaluation converts factual findings into evaluated findings with policy outcomes, rules, reasons, counts, exit-code semantics, and repair eligibility. Deterministic repair proposals now construct indivisible components, run a typed greedy train/test assignment, preserve all records, and report proposal metrics and tradeoffs for researcher review.
-
-Still pending for Task 11: packaging and automation work outside milestone Task 10.
-
-## Operational audit quick start
-
-Task 8 adds the operational local audit command:
-
-```bash
-slide-of-life audit \
-  --train examples/demo/train_manifest.csv \
-  --test examples/demo/test_manifest.csv \
-  --images examples/demo/images \
-  --output artifacts/demo-audit
-```
-
-The Task 9 generator creates the documented demo files on demand; users may also provide their own train/test CSV manifests and optional image root.
-
-The audit writes:
-
-- `report.json`: typed UTF-8 JSON report.
-- `report.html`: standalone local HTML report with embedded CSS and escaped content.
-- `findings.csv`: one row per evaluated finding.
-- `repair_proposal.csv`: one row per canonical record, only when `--repair` is requested.
-
-Exit codes are `0` for a completed audit without policy violations, `2` for a completed audit with policy violations after artifacts are written, and `1` for input, configuration, execution, or artifact-writing failures.
-
-## Optional OpenAI schema assistance
-
-Deterministic auditing works without OpenAI. When explicitly enabled with
-`--ai-schema-map`, AI can propose mappings only for unresolved schema columns; it
-never creates findings, policy outcomes, or repair decisions. Only headers and
-aggregate column statistics may be sent. Raw rows, literal record values, image
-paths, and image bytes stay local. OpenAI API charges may apply.
-
-In a local interactive terminal, a missing key opens a menu to open the official
-key page (only after confirmation), paste a hidden process-local key, continue
-without AI when deterministic coverage permits, or quit. Slide-of-Life never
-stores a pasted key and makes no extra key-validation request. See the
-[API key page](https://platform.openai.com/api-keys) and
-[API quickstart](https://platform.openai.com/docs/quickstart).
-
-Temporary session setup:
-
-```powershell
-$env:OPENAI_API_KEY="your-key"
-```
-
-```bash
-export OPENAI_API_KEY="your-key"
-```
-
-For GitHub Actions, use a GitHub Secret rather than an Action input:
-
-```yaml
-env:
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-```
-
-The Action never prompts or opens a browser. If credentials are unavailable it
-falls back deterministically when minimum coverage exists, otherwise it fails with
-focused setup guidance. An explicit `--schema-map` file is always the manual,
-AI-free alternative.
-
-The legacy `slidelineage` console command remains a deprecated compatibility alias
-and may be removed in a future major version. Python imports and
-`python -m slidelineage` remain supported and do not emit a deprecation notice.
+Slide-of-Life is distributed under the [MIT License](LICENSE).
