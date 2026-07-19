@@ -14,6 +14,8 @@ import venv
 import zipfile
 from pathlib import Path
 
+from packaging.metadata import Metadata
+
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = "0.1.0a1"
 REQUIRED_SDIST = {
@@ -85,6 +87,27 @@ def classify_artifacts(directory: Path) -> tuple[Path, Path, Path | None]:
 def check_distribution_metadata(wheel: Path, sdist: Path) -> None:
     """Ask Twine to check Python distributions, excluding support artifacts."""
     run([sys.executable, "-m", "twine", "check", str(wheel), str(sdist)])
+
+
+def inspect_wheel_metadata(wheel: Path) -> Metadata:
+    """Parse and validate the sole core-metadata document in a wheel."""
+    with zipfile.ZipFile(wheel) as archive:
+        metadata_files = [
+            name for name in archive.namelist() if name.endswith(".dist-info/METADATA")
+        ]
+        if len(metadata_files) != 1:
+            raise RuntimeError(
+                f"expected one wheel METADATA document: {metadata_files}"
+            )
+        metadata_bytes = archive.read(metadata_files[0])
+
+    metadata = Metadata.from_email(metadata_bytes, validate=True)
+    if metadata.name != "slide-of-life" or str(metadata.version) != VERSION:
+        raise RuntimeError(
+            "unexpected wheel identity: "
+            f"Name={metadata.name!r}, Version={metadata.version!s}"
+        )
+    return metadata
 
 
 def smoke(artifact: Path, *, ai: bool = False) -> str:
@@ -173,6 +196,7 @@ def main() -> int:
         run([sys.executable, "-m", "build"])
     wheel, sdist, _checksums = classify_artifacts(ROOT / "dist")
     check_distribution_metadata(wheel, sdist)
+    inspect_wheel_metadata(wheel)
     with zipfile.ZipFile(wheel) as archive:
         wheel_names = archive.namelist()
         payloads = [archive.read(n) for n in wheel_names]

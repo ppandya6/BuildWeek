@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import yaml
@@ -110,3 +111,26 @@ def test_security_sensitive_actions_are_immutable_and_no_secrets_or_ai():
     assert "secrets." not in lowered
     assert "openai" not in lowered
     assert "repository-url" not in lowered
+
+
+def test_current_pypi_action_pin_preserves_trusted_publishing_defaults():
+    text = WORKFLOW_PATH.read_text(encoding="utf-8")
+    match = re.search(r"pypa/gh-action-pypi-publish@([0-9a-f]{40}) # (v[^\s]+)", text)
+    assert match is not None
+    assert match.groups() == (
+        "ba38be9e461d3875417946c167d0b5f3d385a247",
+        "v1.14.1",
+    )
+    assert "ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0" not in text
+    assert "v1.9.0" not in text
+
+    publish = workflow()["jobs"]["publish"]
+    action_step = next(
+        step
+        for step in publish["steps"]
+        if "pypa/gh-action-pypi-publish@" in step.get("uses", "")
+    )
+    assert action_step["with"] == {"packages-dir": "dist/"}
+    assert "verify-metadata" not in action_step["with"]
+    assert "verify_metadata" not in action_step["with"]
+    assert not {"user", "username", "password", "token"} & action_step["with"].keys()

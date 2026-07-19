@@ -1,5 +1,6 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
@@ -47,6 +48,28 @@ def test_checksum_is_allowed_but_not_passed_to_twine(tmp_path, monkeypatch):
         ]
     ]
     assert str(checksums) not in commands[0]
+
+
+def test_wheel_metadata_has_parseable_project_identity(tmp_path):
+    wheel = tmp_path / "slide_of_life-0.1.0a1-py3-none-any.whl"
+    metadata_text = """\
+Metadata-Version: 2.4
+Name: slide-of-life
+Version: 0.1.0a1
+Requires-Python: >=3.11
+Project-URL: Repository, https://github.com/ppandya6/Slide-of-Life
+
+Synthetic package metadata fixture.
+"""
+    with ZipFile(wheel, "w", compression=ZIP_DEFLATED) as archive:
+        archive.writestr("slide_of_life-0.1.0a1.dist-info/METADATA", metadata_text)
+
+    metadata = validate_distribution.inspect_wheel_metadata(wheel)
+
+    assert metadata.metadata_version == "2.4"
+    assert metadata.name == "slide-of-life"
+    assert str(metadata.version) == "0.1.0a1"
+    assert str(metadata.requires_python) == ">=3.11"
 
 
 @pytest.mark.parametrize(
