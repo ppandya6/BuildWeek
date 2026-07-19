@@ -1,4 +1,4 @@
-"""Shared pytest configuration and helpers for SlideLineage tests."""
+"""Shared pytest configuration and helpers for Slide-of-Life tests."""
 
 from pathlib import Path
 

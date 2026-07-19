@@ -1,6 +1,6 @@
-# SlideLineage
+# Slide-of-Life
 
-SlideLineage is a local scientific developer tool planned to audit train/test partition relationships in computational-pathology datasets. It is intended for researchers, benchmark maintainers, data engineers, and scientific software developers who need transparent evidence about partition independence before model training or evaluation.
+Slide-of-Life is a local scientific developer tool planned to audit train/test partition relationships in computational-pathology datasets. It is intended for researchers, benchmark maintainers, data engineers, and scientific software developers who need transparent evidence about partition independence before model training or evaluation.
 
 ## Current implementation status
 
@@ -22,7 +22,7 @@ generate and audit from the repository root:
 
 ```bash
 python scripts/generate_demo.py --force
-slidelineage audit \
+slide-of-life audit \
   --train examples/demo/generated/train_manifest.csv \
   --test examples/demo/generated/test_manifest.csv \
   --images examples/demo/generated/images \
@@ -60,7 +60,7 @@ never creates scientific findings, policy decisions, or repairs.
 Proposal-only mode:
 
 ```bash
-slidelineage audit \
+slide-of-life audit \
   --train train.csv \
   --test test.csv \
   --output artifacts/audit \
@@ -70,7 +70,7 @@ slidelineage audit \
 Explicitly accepted mode:
 
 ```bash
-slidelineage audit \
+slide-of-life audit \
   --train train.csv \
   --test test.csv \
   --output artifacts/audit \
@@ -82,7 +82,7 @@ slidelineage audit \
 
 Callers must check out their manifests and select Python 3.11 before invoking the
 local composite action. Before a tagged package release exists, the action installs
-SlideLineage predictably from `${{ github.action_path }}` and wraps the existing
+Slide-of-Life predictably from `${{ github.action_path }}` and wraps the existing
 CLI rather than reimplementing the audit engine.
 
 ```yaml
@@ -96,17 +96,17 @@ CLI rather than reimplementing the audit engine.
     train-manifest: data/train.csv
     test-manifest: data/test.csv
     images-dir: data/images
-    output-dir: slidelineage-artifacts
+    output-dir: slide-of-life-artifacts
     fail-on-violations: "true"
 - if: always()
   uses: actions/upload-artifact@v4
   with:
-    name: slidelineage-audit
+    name: slide-of-life-audit
     path: |
-      slidelineage-artifacts/report.json
-      slidelineage-artifacts/report.html
-      slidelineage-artifacts/findings.csv
-      slidelineage-artifacts/repair_proposal.csv
+      slide-of-life-artifacts/report.json
+      slide-of-life-artifacts/report.html
+      slide-of-life-artifacts/findings.csv
+      slide-of-life-artifacts/repair_proposal.csv
 ```
 
 Required inputs are `train-manifest` and `test-manifest`. Optional inputs configure
@@ -141,8 +141,8 @@ ruff format --check .
 ruff check .
 mypy src
 pytest -q
-slidelineage --help
-slidelineage --version
+slide-of-life --help
+slide-of-life --version
 ```
 
 PowerShell:
@@ -152,8 +152,8 @@ ruff format --check .
 ruff check .
 mypy src
 pytest -q
-slidelineage --help
-slidelineage --version
+slide-of-life --help
+slide-of-life --version
 ```
 
 ## Planned output files
@@ -169,11 +169,11 @@ Task 9 supplies the reproducible synthetic fixture and end-to-end assertions.
 
 ## Privacy and scope
 
-Deterministic auditing is planned to run locally. API access must be opt-in, API keys must not be stored in the repository, and future GPT requests must avoid complete manifests or images. SlideLineage is non-clinical software: it must not make diagnosis, prognosis, treatment, biological interpretation, or clinical claims.
+Deterministic auditing is planned to run locally. API access must be opt-in, API keys must not be stored in the repository, and future GPT requests must avoid complete manifests or images. Slide-of-Life is non-clinical software: it must not make diagnosis, prognosis, treatment, biological interpretation, or clinical claims.
 
 ## License
 
-SlideLineage is distributed under the MIT License. See [LICENSE](LICENSE).
+Slide-of-Life is distributed under the MIT License. See [LICENSE](LICENSE).
 
 ## Task 7 implementation status
 
@@ -186,7 +186,7 @@ Still pending for Task 11: packaging and automation work outside milestone Task 
 Task 8 adds the operational local audit command:
 
 ```bash
-slidelineage audit \
+slide-of-life audit \
   --train examples/demo/train_manifest.csv \
   --test examples/demo/test_manifest.csv \
   --images examples/demo/images \
@@ -203,3 +203,44 @@ The audit writes:
 - `repair_proposal.csv`: one row per canonical record, only when `--repair` is requested.
 
 Exit codes are `0` for a completed audit without policy violations, `2` for a completed audit with policy violations after artifacts are written, and `1` for input, configuration, execution, or artifact-writing failures.
+
+## Optional OpenAI schema assistance
+
+Deterministic auditing works without OpenAI. When explicitly enabled with
+`--ai-schema-map`, AI can propose mappings only for unresolved schema columns; it
+never creates findings, policy outcomes, or repair decisions. Only headers and
+aggregate column statistics may be sent. Raw rows, literal record values, image
+paths, and image bytes stay local. OpenAI API charges may apply.
+
+In a local interactive terminal, a missing key opens a menu to open the official
+key page (only after confirmation), paste a hidden process-local key, continue
+without AI when deterministic coverage permits, or quit. Slide-of-Life never
+stores a pasted key and makes no extra key-validation request. See the
+[API key page](https://platform.openai.com/api-keys) and
+[API quickstart](https://platform.openai.com/docs/quickstart).
+
+Temporary session setup:
+
+```powershell
+$env:OPENAI_API_KEY="your-key"
+```
+
+```bash
+export OPENAI_API_KEY="your-key"
+```
+
+For GitHub Actions, use a GitHub Secret rather than an Action input:
+
+```yaml
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+The Action never prompts or opens a browser. If credentials are unavailable it
+falls back deterministically when minimum coverage exists, otherwise it fails with
+focused setup guidance. An explicit `--schema-map` file is always the manual,
+AI-free alternative.
+
+The legacy `slidelineage` console command remains a deprecated compatibility alias
+and may be removed in a future major version. Python imports and
+`python -m slidelineage` remain supported and do not emit a deprecation notice.

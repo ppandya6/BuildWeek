@@ -1,4 +1,4 @@
-"""Behavioral tests for typed SlideLineage contracts."""
+"""Behavioral tests for typed Slide-of-Life contracts."""
 
 from datetime import UTC, datetime
 

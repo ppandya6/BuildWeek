@@ -1,8 +1,8 @@
-"""Project-specific exception types for SlideLineage."""
+"""Project-specific exception types for Slide-of-Life."""
 
 
 class SlideLineageError(Exception):
-    """Base exception for SlideLineage errors."""
+    """Base exception for Slide-of-Life errors."""
 
 
 class ConfigurationError(SlideLineageError):

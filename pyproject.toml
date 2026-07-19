@@ -3,13 +3,13 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "slidelineage"
+name = "slide-of-life"
 version = "0.1.0"
 description = "Deterministic-first foundation for auditing computational-pathology partition lineage."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
-authors = [{ name = "SlideLineage contributors" }]
+authors = [{ name = "Slide-of-Life contributors" }]
 dependencies = [
   "typer>=0.12.0",
   "pydantic>=2.0",
@@ -24,7 +24,7 @@ dependencies = [
 [project.optional-dependencies]
 ai = ["openai>=1.0"]
 dev = [
-  "pytest>=8.0",
+  "pytest>=8.0,<9",
   "ruff>=0.5.0",
   "mypy>=1.10",
   "pandas-stubs>=2.0",
@@ -33,7 +33,8 @@ dev = [
 ]
 
 [project.scripts]
-slidelineage = "slidelineage.cli:app"
+slidelineage = "slidelineage.cli:compatibility_app"
+slide-of-life = "slidelineage.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/slidelineage"]

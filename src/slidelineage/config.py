@@ -1,4 +1,4 @@
-"""Validated deterministic configuration contracts for SlideLineage."""
+"""Validated deterministic configuration contracts for Slide-of-Life."""
 
 import hashlib
 from pathlib import Path

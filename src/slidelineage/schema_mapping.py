@@ -1,4 +1,4 @@
-"""Deterministic semantic schema mapping for loaded SlideLineage manifests."""
+"""Deterministic semantic schema mapping for loaded Slide-of-Life manifests."""
 
 from __future__ import annotations
 

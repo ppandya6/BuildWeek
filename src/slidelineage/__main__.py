@@ -1,4 +1,4 @@
-"""Run the SlideLineage command-line interface as a Python module."""
+"""Run the Slide-of-Life command-line interface as a Python module."""
 
 from __future__ import annotations
 

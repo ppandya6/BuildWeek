@@ -1,4 +1,4 @@
-name: SlideLineage action example
+name: Slide-of-Life action example
 
 on:
   workflow_dispatch:
@@ -29,17 +29,17 @@ jobs:
           test-manifest: examples/demo/generated/test_manifest.csv
           images-dir: examples/demo/generated/images
           schema-map: examples/demo/schema-map.yaml
-          output-dir: slidelineage-artifacts
+          output-dir: slide-of-life-artifacts
           repair: "true"
           fail-on-violations: "false"
       - name: Upload audit reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: slidelineage-${{ runner.os }}
+          name: slide-of-life-${{ runner.os }}
           path: |
-            slidelineage-artifacts/report.json
-            slidelineage-artifacts/report.html
-            slidelineage-artifacts/findings.csv
-            slidelineage-artifacts/repair_proposal.csv
+            slide-of-life-artifacts/report.json
+            slide-of-life-artifacts/report.html
+            slide-of-life-artifacts/findings.csv
+            slide-of-life-artifacts/repair_proposal.csv
           if-no-files-found: error

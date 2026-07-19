@@ -38,7 +38,7 @@ Repair outputs are proposals requiring researcher review. They should explain wh
 
 ## Non-clinical scope
 
-SlideLineage is limited to dataset provenance and partition validity. It must not make diagnosis, prognosis, treatment advice, biological interpretation, or clinical claims.
+Slide-of-Life is limited to dataset provenance and partition validity. It must not make diagnosis, prognosis, treatment advice, biological interpretation, or clinical claims.
 
 ## Synthetic demonstration fixture
 
@@ -162,3 +162,14 @@ identity evidence, and repairs remain proposals requiring researcher review. Raw
 manifest rows remain local to the runner process. AI is disabled by default; only
 when explicitly enabled may a GitHub-hosted runner send manifest headers and
 privacy-bounded aggregates to the configured provider, never raw rows or images.
+
+## Local AI credential onboarding
+
+AI remains proposal-only, so credential onboarding does not change scientific
+authority. Interactive pasted keys are assigned only to the current process
+environment, are never persisted, and are used by the normal requested call; no
+extra validation call is made. Noninteractive environments, CI, and GitHub Actions
+never prompt or open a browser. Missing credentials produce deterministic fallback
+when the already mapped image or record identifiers provide minimum coverage and a
+report warning records that no AI request occurred. Without minimum coverage the
+run fails with a manual schema-map and environment-secret guidance.

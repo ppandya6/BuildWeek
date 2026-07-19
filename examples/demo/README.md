@@ -1,6 +1,6 @@
 # Synthetic end-to-end demonstration
 
-This example exercises SlideLineage's local deterministic audit with fictional
+This example exercises Slide-of-Life's local deterministic audit with fictional
 identifiers and programmatically generated pixels. It contains no external,
 patient, or clinical data and performs no clinical interpretation.
 
@@ -20,7 +20,7 @@ refused without `--force`.
 ## Run the audit
 
 ```bash
-slidelineage audit \
+slide-of-life audit \
   --train examples/demo/generated/train_manifest.csv \
   --test examples/demo/generated/test_manifest.csv \
   --images examples/demo/generated/images \

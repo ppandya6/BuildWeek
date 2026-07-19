@@ -1,4 +1,4 @@
-"""Typed domain and serialization contracts for SlideLineage milestone one."""
+"""Typed domain and serialization contracts for Slide-of-Life milestone one."""
 
 from datetime import datetime
 from enum import StrEnum
@@ -854,7 +854,7 @@ class RepairProposal(ContractModel):
 
 
 class ToolMetadata(ContractModel):
-    name: str = "SlideLineage"
+    name: str = "Slide-of-Life"
     version: str
 
     @field_validator("name", "version")

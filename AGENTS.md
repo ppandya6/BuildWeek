@@ -1,8 +1,8 @@
-# SlideLineage Repository Contract
+# Slide-of-Life Repository Contract
 
 ## Project purpose
 
-SlideLineage is a local scientific developer tool for auditing train/test partition relationships in computational-pathology datasets. Its scientific architecture is deterministic-first: factual relationship detection must be performed by deterministic code, then evaluated under an explicit `SplitPolicy`, followed by optional repair proposals and optional GPT-5.6 assistance only for schema interpretation.
+Slide-of-Life is a local scientific developer tool for auditing train/test partition relationships in computational-pathology datasets. Its scientific architecture is deterministic-first: factual relationship detection must be performed by deterministic code, then evaluated under an explicit `SplitPolicy`, followed by optional repair proposals and optional GPT-5.6 assistance only for schema interpretation.
 
 Milestone one concerns data provenance and partition validity. It excludes diagnosis, prognosis, treatment advice, biological interpretation, and clinical claims.
 
@@ -114,3 +114,10 @@ into shell command strings; preserve CLI exit-code meaning, keep AI opt-in, and
 exclude secrets from logs and outputs. Action tests must cover Linux and Windows
 path behavior. The action may generate review-required repair proposals but must
 never commit repairs or replace source manifests automatically.
+
+## AI credential onboarding constraints
+
+Never log API keys or persist pasted keys. Never prompt in CI, and never open a URL
+without confirmation; only the official OpenAI API-key and quickstart URLs may be
+used for onboarding. Test every interactive branch through injected functions and
+keep deterministic no-AI mode functional.

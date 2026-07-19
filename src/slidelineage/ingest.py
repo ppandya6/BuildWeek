@@ -1,4 +1,4 @@
-"""Deterministic CSV manifest ingestion boundary for SlideLineage."""
+"""Deterministic CSV manifest ingestion boundary for Slide-of-Life."""
 
 import codecs
 import csv

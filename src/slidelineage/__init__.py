@@ -1,4 +1,4 @@
-"""SlideLineage package foundation."""
+"""Slide-of-Life package foundation."""
 
 __version__ = "0.1.0"
 

@@ -1,5 +1,5 @@
 # ruff: noqa: E501
-"""Standalone HTML report rendering for SlideLineage audits."""
+"""Standalone HTML report rendering for Slide-of-Life audits."""
 
 from collections import Counter, deque
 
@@ -10,11 +10,11 @@ from slidelineage.models import AuditReport
 
 _TEMPLATE = """<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>SlideLineage audit</title>
+<head><meta charset="utf-8"><title>Slide-of-Life audit</title>
 <style>body{font-family:system-ui,sans-serif;margin:2rem;line-height:1.4}table{border-collapse:collapse;width:100%;margin:1rem 0}th,td{border:1px solid #ccc;padding:.35rem;text-align:left;vertical-align:top}.notice{border:2px solid #555;padding:1rem;background:#f7f7f7}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.5rem}.card{border:1px solid #ccc;padding:.75rem}code{white-space:pre-wrap}</style>
 <script>function filterFindings(){const q=document.getElementById('filter').value.toLowerCase();document.querySelectorAll('[data-finding]').forEach(r=>{r.style.display=r.innerText.toLowerCase().includes(q)?'':'none'});}</script>
 </head><body>
-<header><h1>SlideLineage</h1><p>Status: {{ report.status }}</p><p>Policy: {{ report.policy.name }}</p><p>Generated: {{ report.run.completed_at or report.run.started_at }}</p><p>Schema: {{ report.schema_version }}</p></header>
+<header><h1>Slide-of-Life</h1><p>Status: {{ report.status }}</p><p>Policy: {{ report.policy.name }}</p><p>Generated: {{ report.run.completed_at or report.run.started_at }}</p><p>Schema: {{ report.schema_version }}</p></header>
 <section class="notice"><h2>Scope notice</h2><ul><li>Findings concern dataset relationships and evaluation design.</li><li>Image similarity does not establish patient identity.</li><li>Repair output is a proposal requiring researcher review.</li><li>No clinical interpretation is performed.</li></ul></section>
 <section><h2>Overview</h2><div class="cards"><div class="card">Records: {{ report.inputs.total_records }}</div><div class="card">Confirmed relationships: {{ confirmed_relationships }}</div><div class="card">Policy violations: {{ report.policy_evaluation.violations }}</div><div class="card">Review items: {{ report.policy_evaluation.review_items }}</div><div class="card">Image failures: {{ report.summary.metrics.get('image_input_quality_findings', 0) }}</div><div class="card">Repair moved records: {{ report.summary.metrics.get('moved_records', 0) }}</div></div></section>
 <section><h2>Input provenance</h2><table><tr><th>Manifest</th><th>Path</th><th>SHA-256</th><th>Rows</th></tr>{% for m in report.inputs.manifests %}<tr><td>{{ m.manifest_id }}</td><td>{{ m.path }}</td><td>{{ m.sha256 }}</td><td>{{ m.row_count }}</td></tr>{% endfor %}</table></section>

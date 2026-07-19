@@ -53,7 +53,7 @@ def test_generator_is_deterministic_safe_and_preserves_unrelated_files(
     output = tmp_path / "generated"
     first = _generate(output)
     assert first.returncode == 0
-    assert "slidelineage audit" in first.stdout
+    assert "slide-of-life audit" in first.stdout
     assert (output / "train_manifest.csv").is_file()
     assert (output / "test_manifest.csv").is_file()
     assert len(list((output / "images").iterdir())) == 11

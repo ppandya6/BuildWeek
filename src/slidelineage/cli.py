@@ -1,4 +1,4 @@
-"""Command-line interface for SlideLineage."""
+"""Command-line interface for Slide-of-Life."""
 
 from pathlib import Path
 from typing import Annotated
@@ -12,7 +12,7 @@ from slidelineage.config import AuditConfig
 from slidelineage.errors import SlideLineageError
 from slidelineage.policy import DEFAULT_POLICY_PROFILE
 
-APP_NAME = "SlideLineage"
+APP_NAME = "Slide-of-Life"
 APP_PURPOSE = (
     "Local deterministic-first tooling for auditing computational-pathology "
     "train/test partition lineage."
@@ -22,7 +22,7 @@ DOCS_HINT = (
 )
 
 app = typer.Typer(
-    name="slidelineage",
+    name="slide-of-life",
     help=(
         f"{APP_NAME}: {APP_PURPOSE} Default policy profile: "
         f"{DEFAULT_POLICY_PROFILE}. Image similarity is a review candidate, not "
@@ -47,11 +47,11 @@ def main(
             "--version",
             callback=_version_callback,
             is_eager=True,
-            help="Show the SlideLineage version and exit.",
+            help="Show the Slide-of-Life version and exit.",
         ),
     ] = False,
 ) -> None:
-    """Run deterministic SlideLineage commands."""
+    """Run deterministic Slide-of-Life commands."""
     _ = version
 
 
@@ -141,7 +141,18 @@ def audit(
         )
         result = run_audit(config)
     except (SlideLineageError, ValidationError, ValueError) as exc:
-        typer.echo(f"SlideLineage audit failed: {exc}", err=True)
+        typer.echo(f"Slide-of-Life audit failed: {exc}", err=True)
         raise typer.Exit(1) from None
     typer.echo(result.terminal_summary)
     raise typer.Exit(result.exit_code)
+
+
+def compatibility_app() -> None:
+    """Run the deprecated ``slidelineage`` console-command alias."""
+
+    typer.echo(
+        "`slidelineage` is retained for compatibility. "
+        "Use `slide-of-life` for new workflows.",
+        err=True,
+    )
+    app()

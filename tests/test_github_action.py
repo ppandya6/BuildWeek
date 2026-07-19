@@ -40,7 +40,7 @@ def test_action_metadata_contract() -> None:
     assert data["runs"]["using"] == "composite"
     assert data["inputs"]["train-manifest"]["required"] is True
     assert data["inputs"]["test-manifest"]["required"] is True
-    assert data["inputs"]["output-dir"]["default"] == "slidelineage-artifacts"
+    assert data["inputs"]["output-dir"]["default"] == "slide-of-life-artifacts"
     assert data["inputs"]["repair"]["default"] == "false"
     assert data["inputs"]["force"]["default"] == "true"
     assert data["inputs"]["ai-schema-map"]["default"] == "false"
@@ -56,7 +56,8 @@ def test_action_metadata_contract() -> None:
         "review-count",
     }
     assert "set-output" not in text
-    assert "OPENAI_API_KEY" not in text
+    assert "api-key" not in data["inputs"]
+    assert "OPENAI_API_KEY" in data["description"]
 
 
 @pytest.mark.parametrize("value", ["true", "TRUE", "1", "yes", "on"])

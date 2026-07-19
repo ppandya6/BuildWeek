@@ -140,9 +140,9 @@ def test_cli_ai_missing_optional_sdk_has_no_traceback(
     report = AuditReport.model_validate_json(
         (tmp_path / "out" / "report.json").read_text(encoding="utf-8")
     )
-    assert report.ai_schema_assistance.proposal_requested is True
+    assert report.ai_schema_assistance.proposal_requested is False
     assert any(
-        "AI support requires" in warning
+        "credentials are unavailable" in warning
         for warning in report.ai_schema_assistance.warnings
     )
 
@@ -178,7 +178,8 @@ def test_cli_ai_missing_optional_sdk_fails_without_minimum_coverage(
         del args[option_index : option_index + 2]
     result = runner.invoke(app, args + ["--ai-schema-map"])
     assert result.exit_code == 1
-    assert 'python -m pip install -e ".[ai]"' in result.output
+    assert "OPENAI_API_KEY" in result.output
+    assert "schema-map" in result.output
     assert "Traceback" not in result.output
     assert not (tmp_path / "out" / "report.json").exists()
     assert not (tmp_path / "out" / "report.html").exists()

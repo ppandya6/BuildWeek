@@ -1,8 +1,8 @@
-# SlideLineage Product Specification
+# Slide-of-Life Product Specification
 
 ## Target users
 
-SlideLineage targets computational-pathology researchers, benchmark maintainers, dataset curators, and scientific developers responsible for train/test partition integrity.
+Slide-of-Life targets computational-pathology researchers, benchmark maintainers, dataset curators, and scientific developers responsible for train/test partition integrity.
 
 ## User problem
 
@@ -67,4 +67,12 @@ Deferred capabilities include broader institutional provenance modeling, advance
 
 ## Success criteria
 
-Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slidelineage --help` and `slidelineage --version`, load two CSV manifests into deterministic typed ingestion contracts, produce typed deterministic schema mappings, construct canonical records, run factual detectors, materialize relationship graphs, evaluate findings under `SplitPolicy`, generate deterministic repair proposals, optionally request privacy-bounded AI schema proposals with deterministic validation and explicit acceptance, and invoke the same pipeline through the Task 11 composite GitHub Action. Task 11 packaging is implemented; Task 12 skill packaging and broader release automation remain deferred.
+Success means users can install the package, run documented developer checks, inspect accurate milestone documentation, invoke `slide-of-life --help` and `slide-of-life --version`, load two CSV manifests into deterministic typed ingestion contracts, produce typed deterministic schema mappings, construct canonical records, run factual detectors, materialize relationship graphs, evaluate findings under `SplitPolicy`, generate deterministic repair proposals, optionally request privacy-bounded AI schema proposals with deterministic validation and explicit acceptance, and invoke the same pipeline through the Task 11 composite GitHub Action. Task 11 packaging is implemented; Task 12 skill packaging and broader release automation remain deferred.
+
+## Product-hardening status
+
+The public product, distribution, and primary CLI are renamed to Slide-of-Life,
+while the `slidelineage` import package and deprecated CLI alias remain compatible.
+Local process-only AI credential onboarding is implemented. The GitHub Action
+remains noninteractive and AI-disabled by default. Task 12 skill packaging remains
+pending and is not part of this work.

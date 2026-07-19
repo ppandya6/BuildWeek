@@ -1,4 +1,4 @@
-"""Artifact writers for deterministic SlideLineage audit reports."""
+"""Artifact writers for deterministic Slide-of-Life audit reports."""
 
 import csv
 import json

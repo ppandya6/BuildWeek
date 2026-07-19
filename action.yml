@@ -1,12 +1,16 @@
-name: SlideLineage deterministic audit
-description: Audit dataset partition provenance and overlap without claiming a dataset is contamination-free.
-author: SlideLineage contributors
+name: Slide-of-Life deterministic audit
+description: >-
+  Run a noninteractive Slide-of-Life audit. AI is disabled by default; the Action
+  never prompts or opens a browser. Supply OPENAI_API_KEY through GitHub Secrets,
+  never as an Action input. Missing credentials trigger deterministic fallback or
+  focused failure according to schema coverage.
+author: Slide-of-Life contributors
 inputs:
   train-manifest: {description: "Path to the train CSV manifest.", required: true}
   test-manifest: {description: "Path to the test CSV manifest.", required: true}
   images-dir: {description: "Optional image root.", required: false, default: ""}
   schema-map: {description: "Optional deterministic schema-map YAML path.", required: false, default: ""}
-  output-dir: {description: "Directory for generated artifacts.", required: false, default: "slidelineage-artifacts"}
+  output-dir: {description: "Directory for generated artifacts.", required: false, default: "slide-of-life-artifacts"}
   policy-profile: {description: "Split policy profile.", required: false, default: "patient_independent_pathology_benchmark"}
   repair: {description: "Generate a review-required repair proposal.", required: false, default: "false"}
   force: {description: "Replace known artifacts in the output directory.", required: false, default: "true"}
@@ -32,7 +36,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Install SlideLineage action source
+    - name: Install Slide-of-Life action source
       shell: bash
       run: python -m pip install "${{ github.action_path }}"
     - name: Run deterministic audit

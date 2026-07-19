@@ -16,7 +16,7 @@ def test_complete_clean_audit_writes_artifacts_and_metadata(tmp_path: Path) -> N
     assert result.artifacts.repair_proposal_csv is None
     assert result.report.reproducibility.config_digest
     assert result.report.schema_mappings is not None
-    assert "SlideLineage audit complete" in result.terminal_summary
+    assert "Slide-of-Life audit complete" in result.terminal_summary
 
 
 def test_policy_violations_return_two_and_artifacts_remain(tmp_path: Path) -> None:
@@ -67,6 +67,7 @@ def test_ai_proposal_only_does_not_change_deterministic_findings(
         )
 
     monkeypatch.setattr("slidelineage.audit.request_ai_schema_proposal", fake)
+    monkeypatch.setenv("OPENAI_API_KEY", "fake-test-only-key")
     result = run_audit(config)
     assert result.report.ai_schema_assistance.proposal_received
     assert not result.report.ai_schema_assistance.validated_proposal.applied

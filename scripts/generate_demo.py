@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the deterministic, entirely synthetic SlideLineage demonstration."""
+"""Generate the deterministic, entirely synthetic Slide-of-Life demonstration."""
 
 from __future__ import annotations
 
@@ -236,7 +236,7 @@ def main() -> int:
     print(f"Generated test manifest: {args.output / 'test_manifest.csv'}")
     print(f"Generated synthetic images: {args.output / 'images'}")
     print(
-        "Run: slidelineage audit --train "
+        "Run: slide-of-life audit --train "
         + str(args.output / "train_manifest.csv")
         + " --test "
         + str(args.output / "test_manifest.csv")

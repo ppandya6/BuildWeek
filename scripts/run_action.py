@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-platform entry point for the SlideLineage composite GitHub Action."""
+"""Cross-platform entry point for the Slide-of-Life composite GitHub Action."""
 
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ def parse_inputs(values: Mapping[str, str]) -> ActionInputs:
     if schema is not None and not schema.is_file():
         raise ActionInputError(f"schema-map does not exist: {schema}")
 
-    output = Path(_value(values, "output-dir", "slidelineage-artifacts"))
+    output = Path(_value(values, "output-dir", "slide-of-life-artifacts"))
     if output.resolve(strict=False) in {train.resolve(), test.resolve()}:
         raise ActionInputError("output-dir must not equal an input manifest")
     fraction_text = _value(values, "target-train-fraction")
@@ -228,7 +228,7 @@ def _summary(
     if outputs["repair-proposal-csv"]:
         artifacts.append(outputs["repair-proposal-csv"])
     lines = [
-        "## SlideLineage audit",
+        "## Slide-of-Life audit",
         f"- **Status:** {safe(outputs['status'])}",
         f"- **Train manifest:** `{safe(inputs.train_manifest)}`",
         f"- **Test manifest:** `{safe(inputs.test_manifest)}`",
@@ -258,7 +258,7 @@ def process_result(inputs: ActionInputs, cli_exit: int, env: Mapping[str, str]) 
         return 1
     if cli_exit not in (0, 2):
         print(
-            f"SlideLineage action failed: unexpected CLI exit code {cli_exit}",
+            f"Slide-of-Life action failed: unexpected CLI exit code {cli_exit}",
             file=sys.stderr,
         )
         return 1
@@ -270,7 +270,7 @@ def process_result(inputs: ActionInputs, cli_exit: int, env: Mapping[str, str]) 
     ]
     if not all(path.is_file() for path in expected):
         print(
-            "SlideLineage action failed: expected audit artifacts are missing",
+            "Slide-of-Life action failed: expected audit artifacts are missing",
             file=sys.stderr,
         )
         return 1
@@ -280,7 +280,7 @@ def process_result(inputs: ActionInputs, cli_exit: int, env: Mapping[str, str]) 
         )
     except (OSError, ValidationError, ValueError) as exc:
         print(
-            f"SlideLineage action failed: invalid report.json: {exc}", file=sys.stderr
+            f"Slide-of-Life action failed: invalid report.json: {exc}", file=sys.stderr
         )
         return 1
     repair_path = inputs.output_dir / "repair_proposal.csv"
@@ -343,7 +343,7 @@ def main(
         completed = subprocess.run(build_command(inputs), check=False)
         return process_result(inputs, completed.returncode, environment)
     except (ActionInputError, OSError, json.JSONDecodeError) as exc:
-        print(f"SlideLineage action failed: {exc}", file=sys.stderr)
+        print(f"Slide-of-Life action failed: {exc}", file=sys.stderr)
         return 1
 
 

@@ -7,6 +7,10 @@ from datetime import UTC, datetime
 from importlib import metadata
 
 from slidelineage import __version__
+from slidelineage.ai_onboarding import (
+    credential_failure_guidance,
+    resolve_ai_credentials,
+)
 from slidelineage.ai_schema import (
     PRIVACY_NOTICE,
     ai_request_digest,
@@ -165,6 +169,32 @@ def _assist_schema(
             ),
             (warning,),
         )
+    resolution = resolve_ai_credentials(
+        ai_requested=True,
+        deterministic_coverage_sufficient=_minimum_coverage(mappings),
+    )
+    if not resolution.ai_enabled_for_run:
+        if resolution.exit_requested:
+            raise AiSchemaError(
+                credential_failure_guidance(
+                    noninteractive=resolution.credential_source == "unavailable"
+                )
+            )
+        warning = resolution.warning or (
+            "AI was requested but unavailable; no AI request was sent."
+        )
+        return (
+            mappings,
+            AiUsageRecord(
+                enabled=False,
+                acceptance_requested=acceptance,
+                model=config.ai_model,
+                provider="openai",
+                privacy_summary=PRIVACY_NOTICE,
+                warnings=(warning,),
+            ),
+            (warning,),
+        )
     request = build_ai_schema_request(pair.train, pair.test, mappings, config)
     digest = ai_request_digest(request)
     try:
@@ -304,7 +334,7 @@ def _terminal_summary(report: AuditReport, output_dir) -> str:  # type: ignore[n
     status = "POLICY VIOLATIONS" if report.policy_evaluation.violations else "PASSED"
     repair = "generated" if report.repair_proposal else "not requested"
     lines = [
-        "SlideLineage audit complete",
+        "Slide-of-Life audit complete",
         f"Train records: {m.get('train_records', 0)}",
         f"Test records: {m.get('test_records', 0)}",
         f"Patient overlaps: {m.get('patient_overlap_findings', 0)}",
