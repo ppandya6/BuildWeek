@@ -1,4 +1,6 @@
+import re
 import tomllib
+from datetime import date
 from importlib.metadata import distribution
 from pathlib import Path
 
@@ -34,7 +36,14 @@ def test_release_documents_are_synchronized_and_safe():
         "future PyPI release" in readme
         and "slide_of_life-0.1.0a1-py3-none-any.whl" in readme
     )
-    assert f"## {__version__} - Unreleased" in changelog
+    version_headings = re.findall(
+        rf"^##\s+{re.escape(__version__)}\s+-\s+(.+)$", changelog, re.MULTILINE
+    )
+    assert len(version_headings) == 1
+    release_label = version_headings[0]
+    assert re.fullmatch(r"Unreleased|\d{4}-\d{2}-\d{2}", release_label)
+    if release_label != "Unreleased":
+        date.fromisoformat(release_label)
     workflow = (ROOT / ".github/workflows/release.yml").read_text()
     assert (
         "pypi" not in workflow.lower()
