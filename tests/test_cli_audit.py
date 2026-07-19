@@ -113,6 +113,8 @@ def test_cli_ai_help_and_acceptance_requires_enablement(tmp_path: Path) -> None:
 def test_cli_ai_missing_optional_sdk_has_no_traceback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
     def missing_sdk(name: str) -> object:
         raise ModuleNotFoundError(name)
 
@@ -150,6 +152,8 @@ def test_cli_ai_missing_optional_sdk_has_no_traceback(
 def test_cli_ai_missing_optional_sdk_fails_without_minimum_coverage(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
     def missing_sdk(name: str) -> object:
         raise ModuleNotFoundError(name)
 
