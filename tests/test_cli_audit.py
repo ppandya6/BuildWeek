@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from conftest import audit_manifest
 from slidelineage.cli import app
+from slidelineage.models import AuditReport
 
 runner = CliRunner()
 
@@ -102,13 +103,49 @@ def test_cli_ai_missing_optional_sdk_has_no_traceback(
     for manifest_name in ("train.csv", "test.csv"):
         manifest = tmp_path / manifest_name
         manifest.write_text(
-            manifest.read_text(encoding="utf-8").replace("patient", "unknown_code"),
+            manifest.read_text(encoding="utf-8").replace("label", "unknown_code"),
             encoding="utf-8",
         )
-    patient_option = args.index("--patient-column")
-    del args[patient_option : patient_option + 2]
+    label_option = args.index("--label-column")
+    del args[label_option : label_option + 2]
     result = runner.invoke(app, args + ["--ai-schema-map"])
     assert result.exit_code == 0
     assert "Traceback" not in result.output
-    report = (tmp_path / "out" / "report.json").read_text(encoding="utf-8")
-    assert "AI support requires" in report
+    report = AuditReport.model_validate_json(
+        (tmp_path / "out" / "report.json").read_text(encoding="utf-8")
+    )
+    assert any(
+        "AI support requires" in warning
+        for warning in report.ai_schema_assistance.warnings
+    )
+
+
+def test_cli_ai_missing_optional_sdk_fails_without_minimum_coverage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def missing_sdk(name: str) -> object:
+        raise ModuleNotFoundError(name)
+
+    monkeypatch.setattr("slidelineage.ai_schema.import_module", missing_sdk)
+    args = _args(tmp_path)
+    for manifest_name in ("train.csv", "test.csv"):
+        manifest = tmp_path / manifest_name
+        header, row = manifest.read_text(encoding="utf-8").splitlines()
+        columns = row.split(",")
+        columns[0] = ""
+        columns[-1] = ""
+        manifest.write_text(
+            header.replace("img", "unknown_path").replace("rid", "unknown_record")
+            + "\n"
+            + ",".join(columns)
+            + "\n",
+            encoding="utf-8",
+        )
+    for option in ("--image-column", "--record-id-column"):
+        option_index = args.index(option)
+        del args[option_index : option_index + 2]
+    result = runner.invoke(app, args + ["--ai-schema-map"])
+    assert result.exit_code == 1
+    assert 'python -m pip install -e ".[ai]"' in result.output
+    assert "Traceback" not in result.output
+    assert not (tmp_path / "out" / "report.json").exists()
