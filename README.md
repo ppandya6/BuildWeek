@@ -3,11 +3,10 @@
 **A local, deterministic-first audit for hidden relationships between the train
 and test partitions of computational-pathology datasets.**
 
-Slide-of-Life finds explicit lineage overlap, exact image duplication, and image
-similarity candidates *before* leakage makes an evaluation look more convincing
-than it is. It then evaluates the factual evidence against a named split policy
-and can create a review-required repair proposal.
+Slide-of-Life finds biological linkages in the test and train sets (AKA: a lineage overlap), exact image duplication, and image
+similarity candidates *before* an overlap in the datasets cause a research-based evaluation to skew. It then evaluates the identified factual evidence against a named split policy and can create a review-required repair proposal.
 
+> The following contents are written by Codex.
 > Built for OpenAI Build Week with Codex and optional GPT-5.6 schema assistance.
 > No OpenAI API key is needed for the demo or for normal deterministic audits.
 
